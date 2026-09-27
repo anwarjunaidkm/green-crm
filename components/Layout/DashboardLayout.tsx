@@ -28,13 +28,13 @@ export default function DashboardLayout({
   const initial = user.name?.trim()?.charAt(0)?.toUpperCase() || "U";
 
   return (
-    <div className="min-h-screen bg-[#f7faf7] text-slate-900">
-      <div className="flex min-h-screen">
+    <div className="min-h-dvh bg-[#f7faf7] text-slate-900">
+      <div className="flex min-h-dvh">
         {/* ====================================================
             DESKTOP SIDEBAR
         ==================================================== */}
 
-        <aside className="sticky top-0 hidden h-screen w-[255px] shrink-0 border-r border-slate-200 bg-white lg:flex lg:flex-col">
+        <aside className="sticky top-0 hidden h-dvh w-[255px] shrink-0 border-r border-slate-200 bg-white lg:flex lg:flex-col">
           {/* LOGO */}
 
           <div className="flex h-[76px] shrink-0 items-center border-b border-slate-100 px-6">
@@ -150,10 +150,17 @@ export default function DashboardLayout({
           </header>
 
           {/* ==================================================
-              PAGE
+              PAGE CONTENT
+
+              IMPORTANT:
+              Mobile bottom nav = 72px.
+              We reserve enough space below the page so the
+              last form element can scroll completely above it.
           ================================================== */}
 
-          <main className="pb-24 lg:pb-0">{children}</main>
+          <main className="min-h-0 pb-[calc(72px+env(safe-area-inset-bottom))] lg:pb-0">
+            {children}
+          </main>
         </div>
       </div>
 

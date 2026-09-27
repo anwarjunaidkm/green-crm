@@ -105,7 +105,7 @@ const STATUS_OPTIONS: StatusOption[] = [
 ];
 
 // ============================================================
-// GET INITIAL DATA
+// INITIAL DATA
 // ============================================================
 
 function getInitialUpdateState(
@@ -141,11 +141,8 @@ function getInitialUpdateState(
 
     return {
       status: parsed.status ?? nextDefaultStatus,
-
       previousStatus: parsed.status ?? defaultStatus,
-
       followUpDate: parsed.followUpDate ?? "",
-
       followUpTime: parsed.followUpTime ?? "",
     };
   } catch (error) {
@@ -166,7 +163,7 @@ export default function UpdateLeadStatus({
   const router = useRouter();
 
   // ==========================================================
-  // INITIAL DATA
+  // INITIAL STATE
   // ==========================================================
 
   const [initialData] = useState(() =>
@@ -174,7 +171,7 @@ export default function UpdateLeadStatus({
   );
 
   // ==========================================================
-  // STATE
+  // FORM STATE
   // ==========================================================
 
   const [status, setStatus] = useState<LeadStatus>(initialData.status);
@@ -190,7 +187,7 @@ export default function UpdateLeadStatus({
   const [isSaving, setIsSaving] = useState(false);
 
   // ==========================================================
-  // SAVE UPDATE
+  // SUBMIT
   // ==========================================================
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
@@ -227,40 +224,35 @@ export default function UpdateLeadStatus({
 
       const oldTimeline = previous?.timeline ?? [];
 
+      // ======================================================
+      // NEW HISTORY
+      // ======================================================
+
       const newTimelineItems: LeadTimelineItem[] = [];
 
       const createdAt = new Date().toISOString();
 
       // ======================================================
-      // STATUS HISTORY
+      // STATUS CHANGED
       // ======================================================
 
       if (oldStatus !== status) {
         newTimelineItems.push({
           id: crypto.randomUUID(),
-
           type: "status_updated",
-
           title: "Status Updated",
-
           oldValue: oldStatus,
-
           newValue: status,
-
           note: note.trim(),
-
           followUpDate,
-
           followUpTime,
-
           updatedBy: "Anwar",
-
           createdAt,
         });
       }
 
       // ======================================================
-      // FOLLOW-UP HISTORY
+      // FOLLOW-UP CHANGED
       // ======================================================
 
       const followUpChanged =
@@ -276,23 +268,14 @@ export default function UpdateLeadStatus({
 
         newTimelineItems.push({
           id: crypto.randomUUID(),
-
           type: "follow_up_updated",
-
           title: "Follow-up Updated",
-
           oldValue: oldFollowUp,
-
           newValue: newFollowUp,
-
           note: note.trim(),
-
           followUpDate,
-
           followUpTime,
-
           updatedBy: "Anwar",
-
           createdAt,
         });
       }
@@ -304,15 +287,10 @@ export default function UpdateLeadStatus({
       if (oldStatus === status && !followUpChanged) {
         newTimelineItems.push({
           id: crypto.randomUUID(),
-
           type: "note_added",
-
           title: "Note Added",
-
           note: note.trim(),
-
           updatedBy: "Anwar",
-
           createdAt,
         });
       }
@@ -323,20 +301,16 @@ export default function UpdateLeadStatus({
 
       const updatedData: StoredLeadUpdate = {
         status,
-
         followUpDate,
-
         followUpTime,
-
         note: note.trim(),
-
         timeline: [...newTimelineItems, ...oldTimeline],
       };
 
       window.localStorage.setItem(storageKey, JSON.stringify(updatedData));
 
       // ======================================================
-      // BACK TO LEAD
+      // RETURN TO LEAD VIEW
       // ======================================================
 
       router.push(`/lead-view/${leadId}`);
@@ -352,22 +326,23 @@ export default function UpdateLeadStatus({
   // ==========================================================
 
   return (
-    <div className="min-h-full bg-[#f6f8fc] pb-24 lg:pb-8">
+    <div className="min-h-full bg-[#f6f8fc]">
       {/* ======================================================
-          HEADER
+          PAGE HEADER
       ====================================================== */}
 
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex h-[60px] max-w-[1100px] items-center px-4 sm:px-6 lg:h-[68px]">
           <Link
             href={`/lead-view/${leadId}`}
-            className="mr-3 flex h-9 w-9 items-center justify-center rounded-lg text-blue-600 transition hover:bg-blue-50"
+            aria-label="Back to lead"
+            className="mr-3 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-blue-600 transition hover:bg-blue-50"
           >
             <ArrowLeft size={19} />
           </Link>
 
-          <div>
-            <h1 className="text-[15px] font-semibold text-[#0b1d48] lg:text-[17px]">
+          <div className="min-w-0">
+            <h1 className="truncate text-[15px] font-semibold text-[#0b1d48] lg:text-[17px]">
               Update Lead Status
             </h1>
 
@@ -385,17 +360,21 @@ export default function UpdateLeadStatus({
       <form
         id="lead-status-form"
         onSubmit={handleSubmit}
-        className="mx-auto max-w-[1100px] px-4 py-5 sm:px-6 lg:py-6"
+        className="mx-auto w-full max-w-[1100px] px-4 py-5 sm:px-6 lg:py-6"
       >
-        <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
+        {/* ====================================================
+            FORM GRID
+        ==================================================== */}
+
+        <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
           {/* ==================================================
-              STATUS
+              1. STATUS
           ================================================== */}
 
           <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
             <SectionTitle number="1" title="Select New Status" required />
 
-            {/* CURRENT */}
+            {/* CURRENT STATUS */}
 
             <div className="mt-3 rounded-lg bg-slate-50 px-3 py-2">
               <p className="text-[9px] text-slate-400">Current Status</p>
@@ -405,7 +384,7 @@ export default function UpdateLeadStatus({
               </p>
             </div>
 
-            {/* OPTIONS */}
+            {/* STATUS OPTIONS */}
 
             <div className="mt-3 space-y-2">
               {STATUS_OPTIONS.map((option) => (
@@ -420,12 +399,12 @@ export default function UpdateLeadStatus({
           </section>
 
           {/* ==================================================
-              RIGHT CONTENT
+              RIGHT COLUMN
           ================================================== */}
 
           <div className="space-y-5">
             {/* ================================================
-                FOLLOW-UP
+                2. FOLLOW-UP
             ================================================ */}
 
             <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
@@ -434,7 +413,7 @@ export default function UpdateLeadStatus({
               <div className="mt-4 grid grid-cols-2 gap-3">
                 {/* DATE */}
 
-                <div>
+                <div className="min-w-0">
                   <label className="mb-1.5 block text-[9px] font-medium text-slate-500">
                     Date
                   </label>
@@ -449,14 +428,14 @@ export default function UpdateLeadStatus({
                       type="date"
                       value={followUpDate}
                       onChange={(e) => setFollowUpDate(e.target.value)}
-                      className="h-11 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-2 text-[10px] font-medium text-[#0b1d48] outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                      className="h-11 w-full min-w-0 rounded-lg border border-slate-200 bg-white pl-9 pr-2 text-[10px] font-medium text-[#0b1d48] outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                     />
                   </div>
                 </div>
 
                 {/* TIME */}
 
-                <div>
+                <div className="min-w-0">
                   <label className="mb-1.5 block text-[9px] font-medium text-slate-500">
                     Time
                   </label>
@@ -471,7 +450,7 @@ export default function UpdateLeadStatus({
                       type="time"
                       value={followUpTime}
                       onChange={(e) => setFollowUpTime(e.target.value)}
-                      className="h-11 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-2 text-[10px] font-medium text-[#0b1d48] outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                      className="h-11 w-full min-w-0 rounded-lg border border-slate-200 bg-white pl-9 pr-2 text-[10px] font-medium text-[#0b1d48] outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                     />
                   </div>
                 </div>
@@ -479,7 +458,7 @@ export default function UpdateLeadStatus({
             </section>
 
             {/* ================================================
-                NOTE
+                3. NOTE
             ================================================ */}
 
             <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
@@ -491,18 +470,17 @@ export default function UpdateLeadStatus({
                   maxLength={500}
                   onChange={(e) => setNote(e.target.value)}
                   placeholder="Write what happened in this update..."
-                  className="min-h-[135px] w-full resize-none rounded-xl border border-slate-200 bg-white p-3 pb-7 text-[11px] leading-[1.6] text-[#0b1d48] outline-none placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  className="min-h-[135px] w-full resize-none rounded-xl border border-slate-200 bg-white p-3 pb-8 text-[11px] leading-[1.6] text-[#0b1d48] outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                 />
 
-                <span className="absolute bottom-3 right-3 text-[8px] text-slate-400">
-                  {note.length}
-                  /500
+                <span className="pointer-events-none absolute bottom-3 right-3 text-[8px] text-slate-400">
+                  {note.length}/500
                 </span>
               </div>
             </section>
 
             {/* ================================================
-                UPDATE SUMMARY
+                SUMMARY
                 DESKTOP ONLY
             ================================================ */}
 
@@ -512,12 +490,12 @@ export default function UpdateLeadStatus({
                   <CheckCircle2 size={15} />
                 </div>
 
-                <div>
+                <div className="min-w-0">
                   <p className="text-[10px] font-semibold text-[#0b1d48]">
                     Update Summary
                   </p>
 
-                  <div className="mt-2 flex items-center gap-2 text-[9px]">
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-[9px]">
                     <span className="text-slate-500">{previousStatus}</span>
 
                     <ChevronRight size={12} className="text-slate-400" />
@@ -527,7 +505,7 @@ export default function UpdateLeadStatus({
                     </span>
                   </div>
 
-                  <p className="mt-2 text-[9px] text-slate-500">
+                  <p className="mt-2 text-[9px] leading-4 text-slate-500">
                     This update will be added to the lead history.
                   </p>
                 </div>
@@ -535,17 +513,13 @@ export default function UpdateLeadStatus({
             </section>
 
             {/* ================================================
-                SAVE UPDATE
-
-                ONE BUTTON
-                MOBILE + DESKTOP
-                NORMAL DOCUMENT FLOW
+                DESKTOP SAVE
             ================================================ */}
 
             <button
               type="submit"
               disabled={isSaving || !note.trim()}
-              className="flex h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-[#0868f7] text-[13px] font-semibold text-white shadow-[0_4px_12px_rgba(8,104,247,0.18)] transition hover:bg-[#005de2] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
+              className="hidden h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-[#0868f7] text-[13px] font-semibold text-white shadow-[0_4px_12px_rgba(8,104,247,0.18)] transition hover:bg-[#005de2] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 lg:flex"
             >
               <Send size={16} />
 
@@ -555,10 +529,36 @@ export default function UpdateLeadStatus({
         </div>
 
         {/* ====================================================
-            EXTRA SPACE ABOVE MOBILE BOTTOM NAV
+            MOBILE SAVE
+
+            IMPORTANT:
+            - OUTSIDE GRID
+            - INSIDE FORM
+            - NORMAL FLOW
+            - NO FIXED
+            - NO STICKY
+            - NO ABSOLUTE
         ==================================================== */}
 
-        <div className="h-6 lg:hidden" />
+        <div className="mt-5 block w-full lg:hidden">
+          <button
+            type="submit"
+            disabled={isSaving || !note.trim()}
+            className="flex h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-[#0868f7] text-[13px] font-semibold text-white shadow-[0_4px_12px_rgba(8,104,247,0.18)] transition active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Send size={16} />
+
+            {isSaving ? "Updating..." : "Save Update"}
+          </button>
+        </div>
+
+        {/* ====================================================
+            MOBILE NAV CLEARANCE
+
+            Your global bottom nav is 72px high.
+        ==================================================== */}
+
+        <div aria-hidden="true" className="h-[24px] lg:hidden" />
       </form>
     </div>
   );
@@ -597,7 +597,7 @@ function StatusCard({
         <Icon size={15} />
       </div>
 
-      {/* CONTENT */}
+      {/* TEXT */}
 
       <div className="min-w-0 flex-1">
         <p
@@ -621,14 +621,14 @@ function StatusCard({
         </p>
       </div>
 
-      {/* SELECTED */}
+      {/* SELECTED ICON */}
 
       {selected ? (
         <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white">
           <Check size={11} strokeWidth={3} />
         </div>
       ) : (
-        <ChevronRight size={15} className="text-slate-400" />
+        <ChevronRight size={15} className="shrink-0 text-slate-400" />
       )}
     </button>
   );

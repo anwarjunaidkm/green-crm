@@ -74,12 +74,6 @@ export default function MobileBottomNav({ role }: MobileBottomNavProps) {
       return pathname === "/home";
     }
 
-    /*
-     * Special case:
-     *
-     * /leads/follow-ups should activate Follow-ups,
-     * not both Leads and Follow-ups.
-     */
     if (href === "/leads" && pathname !== "/leads") {
       return false;
     }
@@ -88,10 +82,11 @@ export default function MobileBottomNav({ role }: MobileBottomNavProps) {
   };
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-slate-200 bg-white/95 backdrop-blur-xl lg:hidden">
+    <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden">
       <div className="mx-auto grid h-[72px] max-w-[600px] grid-cols-5">
         {items.map((item) => {
           const Icon = item.icon;
+
           const active = isActive(item.href);
 
           return (
