@@ -1,15 +1,16 @@
 "use client";
 
-import type { ReactNode } from "react";
-import { Bell, ChevronRight, Search } from "lucide-react";
+import { useRef, useState, useEffect, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
+import { Bell, ChevronRight, LogOut, Search, User } from "lucide-react";
 
 import SidebarMenu from "@/components/SidebarMenu/SidebarMenu";
 import MobileBottomNav from "@/components/MobileBottomNav/MobileBottomNav";
 
-import type { User } from "@/types/auth";
+import type { User as UserType } from "@/types/auth";
 
 interface DashboardLayoutProps {
-  user: User;
+  user: UserType;
   children: ReactNode;
   title?: string;
   description?: string;
@@ -21,11 +22,39 @@ export default function DashboardLayout({
   title = "Dashboard",
   description = "Welcome back",
 }: DashboardLayoutProps) {
+  const router = useRouter();
+
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
   const isSuperAdmin = user.role === "super_admin";
-
   const roleLabel = isSuperAdmin ? "Super Admin" : "Staff";
-
   const initial = user.name?.trim()?.charAt(0)?.toUpperCase() || "U";
+
+  /* -------------------------------------------------------
+     Close dropdown when clicking outside
+  ------------------------------------------------------- */
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
+        setDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  /* -------------------------------------------------------
+     Logout
+  ------------------------------------------------------- */
+  const handleLogout = () => {
+    sessionStorage.removeItem("greenvedha_user");
+    router.push("/");
+  };
 
   return (
     <div className="min-h-dvh bg-[#f7faf7] text-slate-900">
@@ -138,13 +167,67 @@ export default function DashboardLayout({
                   <span className="absolute right-[9px] top-[8px] h-2 w-2 rounded-full border-2 border-white bg-red-500" />
                 </button>
 
-                <button
-                  type="button"
-                  aria-label="Profile"
-                  className="ml-1 flex h-10 w-10 items-center justify-center rounded-full bg-[#e1f1e4] text-sm font-semibold text-[#176b32]"
-                >
-                  {initial}
-                </button>
+                {/* ============================================
+                    AVATAR DROPDOWN
+                ============================================ */}
+
+                <div className="relative ml-1" ref={dropdownRef}>
+                  {/* Avatar trigger */}
+                  <button
+                    type="button"
+                    aria-label="Profile menu"
+                    aria-expanded={dropdownOpen}
+                    onClick={() => setDropdownOpen((prev) => !prev)}
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-[#e1f1e4] text-sm font-semibold text-[#176b32] transition hover:ring-2 hover:ring-[#176b32]/20"
+                  >
+                    {initial}
+                  </button>
+
+                  {/* Dropdown panel */}
+                  {dropdownOpen && (
+                    <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-56 overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xl shadow-slate-200/60">
+                      {/* User info */}
+                      <div className="px-4 py-3.5 border-b border-slate-100">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#dcefe0] text-sm font-semibold text-[#176b32]">
+                            {initial}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="truncate text-[13px] font-semibold text-slate-900">
+                              {user.name}
+                            </p>
+                            <p className="text-[11px] text-slate-400">
+                              {roleLabel}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Menu items */}
+                      <div className="p-1.5">
+                        <button
+                          type="button"
+                          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] text-slate-500 transition hover:bg-slate-50 hover:text-slate-900"
+                        >
+                          <User size={15} className="shrink-0" />
+                          Profile
+                        </button>
+                      </div>
+
+                      {/* Divider + Logout */}
+                      <div className="border-t border-slate-100 p-1.5">
+                        <button
+                          type="button"
+                          onClick={handleLogout}
+                          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium text-red-500 transition hover:bg-red-50"
+                        >
+                          <LogOut size={15} className="shrink-0" />
+                          Logout
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </header>
