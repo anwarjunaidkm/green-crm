@@ -1,4 +1,4 @@
-"use client";
+﻿﻿"use client";
 
 import Link from "next/link";
 
@@ -131,13 +131,23 @@ export default function LeadView({ lead }: LeadViewProps) {
             </div>
           </div>
 
-          <button
-            type="button"
-            aria-label="More actions"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50"
-          >
-            <MoreHorizontal size={18} />
-          </button>
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/lead-view/${lead.id}/edit`}
+              className="flex h-9 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-[11px] font-medium text-slate-600 transition hover:bg-slate-50 hover:text-blue-600"
+            >
+              <Pencil size={14} />
+              Edit
+            </Link>
+
+            <button
+              type="button"
+              aria-label="More actions"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50"
+            >
+              <MoreHorizontal size={18} />
+            </button>
+          </div>
         </div>
       </header>
 

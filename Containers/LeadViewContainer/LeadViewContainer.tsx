@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 
@@ -122,7 +122,7 @@ function getLeadData(leadId: string): LeadViewData {
       return baseLead;
     }
 
-    const update: StoredLeadUpdate = JSON.parse(saved);
+    const update: StoredLeadUpdate & { editedDetails?: Partial<LeadViewData> } = JSON.parse(saved);
 
     return {
       ...baseLead,
