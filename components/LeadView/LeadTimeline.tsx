@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   CalendarDays,
@@ -247,11 +247,14 @@ function getTimelineConfig(type: LeadHistoryType) {
 // ============================================================
 
 function formatDate(value: string) {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (isNaN(date.getTime())) return value;
   return new Intl.DateTimeFormat("en-US", {
     day: "2-digit",
     month: "short",
     year: "numeric",
-  }).format(new Date(value));
+  }).format(date);
 }
 
 // ============================================================
@@ -259,9 +262,12 @@ function formatDate(value: string) {
 // ============================================================
 
 function formatTime(value: string) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (isNaN(date.getTime())) return "";
   return new Intl.DateTimeFormat("en-US", {
     hour: "2-digit",
     minute: "2-digit",
     hour12: true,
-  }).format(new Date(value));
+  }).format(date);
 }

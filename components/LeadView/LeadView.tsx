@@ -233,7 +233,6 @@ export default function LeadView({ lead }: LeadViewProps) {
 
         {/* ====================================================
             MOBILE VIEW
-            NO HISTORY
         ==================================================== */}
 
         <div className="mt-4 space-y-4 lg:hidden">
@@ -244,6 +243,10 @@ export default function LeadView({ lead }: LeadViewProps) {
           {/* NEXT FOLLOW-UP */}
 
           <NextFollowUp lead={lead} />
+
+          {/* UPDATE HISTORY - ALL STATUS & NOTE UPDATES */}
+
+          <LeadTimeline timeline={lead.timeline} />
 
           {/* ==================================================
               UPDATE STATUS
