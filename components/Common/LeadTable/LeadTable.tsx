@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import type { ReactNode } from "react";
 import Link from "next/link";
@@ -9,7 +9,6 @@ import {
   ChevronLeft,
   ChevronRight,
   MessageSquare,
-  MoreHorizontal,
   MoreVertical,
   Phone,
   Search,
@@ -323,7 +322,7 @@ function MobileLeadRow({ lead, index }: { lead: Lead; index: number }) {
 
       <Link
         href={`/lead-view/${lead.id}`}
-        className="block px-3 py-3 pr-[105px] transition hover:bg-slate-50 active:bg-slate-50"
+        className="block px-3 py-3 pr-[76px] transition hover:bg-slate-50 active:bg-slate-50"
       >
         <div className="grid grid-cols-[40px_minmax(85px,0.9fr)_minmax(110px,1.25fr)] items-start gap-2">
           {/* AVATAR */}
@@ -387,17 +386,13 @@ function MobileLeadRow({ lead, index }: { lead: Lead; index: number }) {
           So no button inside <a>.
       ===================================================== */}
 
-      <div className="absolute bottom-3 right-3 flex items-center gap-1">
-        <MobileAction label={`Call ${lead.name}`}>
+      <div className="absolute bottom-3 right-3 flex items-center gap-1.5">
+        <MobileAction label={`Call ${lead.name}`} href={`tel:${lead.phone}`}>
           <Phone size={12} />
         </MobileAction>
 
-        <MobileAction label={`Message ${lead.name}`}>
-          <MessageSquare size={11} />
-        </MobileAction>
-
-        <MobileAction label={`More actions for ${lead.name}`} secondary>
-          <MoreHorizontal size={14} />
+        <MobileAction label={`Message ${lead.name}`} href={`sms:${lead.phone}`}>
+          <MessageSquare size={12} />
         </MobileAction>
       </div>
 
@@ -470,21 +465,33 @@ function MobileTab({
 function MobileAction({
   children,
   label,
+  href,
   secondary = false,
 }: {
   children: ReactNode;
   label: string;
+  href?: string;
   secondary?: boolean;
 }) {
+  const className = `flex h-7 w-7 shrink-0 items-center justify-center rounded-full border transition ${
+    secondary
+      ? "border-[#e0e7f1] bg-white text-[#58709d] hover:bg-slate-50"
+      : "border-[#dce8fb] bg-[#f2f7ff] text-[#0066f5] hover:bg-blue-100 active:scale-95"
+  }`;
+
+  if (href) {
+    return (
+      <a href={href} aria-label={label} className={className}>
+        {children}
+      </a>
+    );
+  }
+
   return (
     <button
       type="button"
       aria-label={label}
-      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border transition ${
-        secondary
-          ? "border-[#e0e7f1] bg-white text-[#58709d] hover:bg-slate-50"
-          : "border-[#dce8fb] bg-[#f2f7ff] text-[#0066f5] hover:bg-blue-100"
-      }`}
+      className={className}
     >
       {children}
     </button>
