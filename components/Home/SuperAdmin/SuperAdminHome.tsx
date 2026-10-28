@@ -1,5 +1,6 @@
-"use client";
+﻿"use client";
 
+import Link from "next/link";
 import {
   Activity,
   BarChart3,
@@ -10,6 +11,7 @@ import {
   Clock3,
   Phone,
   Plus,
+  ShoppingCart,
   Target,
   TrendingUp,
   UserPlus,
@@ -244,13 +246,13 @@ export default function SuperAdminHome({ user }: SuperAdminHomeProps) {
       {/* QUICK ACTIONS */}
 
       <section className="mt-4 grid grid-cols-4 gap-2 sm:gap-3 lg:mt-5 lg:grid-cols-6">
-        <QuickAction icon={Plus} title="Add Lead" />
+        <QuickAction icon={Plus} title="Add Lead" href="/leads" />
 
-        <QuickAction icon={UserPlus} title="Add Staff" />
+        <QuickAction icon={ShoppingCart} title="Products" href="/products" />
 
-        <QuickAction icon={Users} title="All Leads" />
+        <QuickAction icon={Users} title="All Leads" href="/leads" />
 
-        <QuickAction icon={Phone} title="Follow-ups" />
+        <QuickAction icon={Phone} title="Follow-ups" href="/leads/follow-ups" />
 
         <QuickAction icon={BarChart3} title="Reports" hideOnMobile />
 
@@ -361,19 +363,16 @@ export default function SuperAdminHome({ user }: SuperAdminHomeProps) {
 function QuickAction({
   icon: Icon,
   title,
+  href,
   hideOnMobile = false,
 }: {
   icon: React.ElementType;
   title: string;
+  href?: string;
   hideOnMobile?: boolean;
 }) {
-  return (
-    <button
-      type="button"
-      className={`min-h-[82px] flex-col items-center justify-center gap-2 rounded-[16px] border border-slate-200/80 bg-white px-1 transition hover:border-green-200 hover:bg-green-50/40 sm:min-h-[90px] ${
-        hideOnMobile ? "hidden lg:flex" : "flex"
-      }`}
-    >
+  const content = (
+    <>
       <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#e7f3e9] text-[#237638]">
         <Icon size={18} />
       </div>
@@ -381,6 +380,24 @@ function QuickAction({
       <span className="text-center text-[9px] font-medium text-slate-700 sm:text-[11px]">
         {title}
       </span>
+    </>
+  );
+
+  const className = `min-h-[82px] flex-col items-center justify-center gap-2 rounded-[16px] border border-slate-200/80 bg-white px-1 transition hover:border-green-200 hover:bg-green-50/40 sm:min-h-[90px] ${
+    hideOnMobile ? "hidden lg:flex" : "flex"
+  }`;
+
+  if (href) {
+    return (
+      <Link href={href} className={className}>
+        {content}
+      </Link>
+    );
+  }
+
+  return (
+    <button type="button" className={className}>
+      {content}
     </button>
   );
 }

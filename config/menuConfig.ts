@@ -1,4 +1,4 @@
-import {
+﻿import {
   Home,
   Users,
   CircleUserRound,
@@ -86,6 +86,28 @@ export const menuItems: MenuItem[] = [
         label: "Active Customers",
         href: "/customers/active",
         roles: ["staff", "super_admin"],
+      },
+    ],
+  },
+
+  // ==========================================================
+  // PRODUCTS
+  // ==========================================================
+  {
+    label: "Products",
+    icon: ShoppingCart,
+    roles: ["staff", "super_admin"],
+
+    children: [
+      {
+        label: "All Products",
+        href: "/products",
+        roles: ["staff", "super_admin"],
+      },
+      {
+        label: "Add Product",
+        href: "/products/add",
+        roles: ["super_admin"],
       },
     ],
   },
