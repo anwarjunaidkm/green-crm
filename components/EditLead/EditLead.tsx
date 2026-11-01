@@ -34,7 +34,6 @@ interface LeadEditFields {
   company: string;
   location: string;
   source: string;
-  assignedTo: string;
 }
 
 // ============================================================
@@ -51,7 +50,6 @@ export default function EditLead({ lead }: EditLeadProps) {
     company: lead.company,
     location: lead.location,
     source: lead.source,
-    assignedTo: lead.assignedTo,
   });
 
   const [isSaving, setIsSaving] = useState(false);
@@ -109,11 +107,30 @@ export default function EditLead({ lead }: EditLeadProps) {
           company: form.company.trim(),
           location: form.location.trim(),
           source: form.source.trim(),
-          assignedTo: form.assignedTo.trim(),
         },
       };
 
       window.localStorage.setItem(storageKey, JSON.stringify(updated));
+
+      // Also update greenvedha_leads_list for table display
+      const leadsRaw = window.localStorage.getItem("greenvedha_leads_list");
+      if (leadsRaw) {
+        const leadsList = JSON.parse(leadsRaw);
+        if (Array.isArray(leadsList)) {
+          const updatedList = leadsList.map((item) =>
+            item.id.toString() === lead.id.toString()
+              ? {
+                  ...item,
+                  name: form.name.trim(),
+                  phone: form.phone.trim(),
+                  source: form.source.trim(),
+                  avatar: form.name.trim().charAt(0).toUpperCase() || item.avatar,
+                }
+              : item
+          );
+          window.localStorage.setItem("greenvedha_leads_list", JSON.stringify(updatedList));
+        }
+      }
 
       router.push(`/lead-view/${lead.id}`);
     } catch (err) {
@@ -258,17 +275,6 @@ export default function EditLead({ lead }: EditLeadProps) {
                   onChange={handleChange}
                   options={SOURCE_OPTIONS}
                 />
-
-                {/* ASSIGNED TO */}
-
-                <SelectField
-                  icon={UserRound}
-                  label="Assigned To"
-                  name="assignedTo"
-                  value={form.assignedTo}
-                  onChange={handleChange}
-                  options={STAFF_OPTIONS}
-                />
               </div>
             </div>
 
@@ -287,11 +293,6 @@ export default function EditLead({ lead }: EditLeadProps) {
 
         {/* ====================================================
             MOBILE SAVE
-
-            IMPORTANT:
-            - OUTSIDE GRID
-            - INSIDE FORM
-            - NORMAL FLOW — NO FIXED / STICKY / ABSOLUTE
         ==================================================== */}
 
         <div className="mt-5 block w-full lg:hidden">
@@ -326,15 +327,6 @@ const SOURCE_OPTIONS = [
   "Referral",
   "Walk-in",
   "Other",
-];
-
-const STAFF_OPTIONS = [
-  "Anwar",
-  "Fatima",
-  "Ali",
-  "John",
-  "Sara",
-  "Omar",
 ];
 
 // ============================================================

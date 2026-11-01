@@ -21,7 +21,7 @@ import { LEAD_STATUS_STYLES, type LeadStatus } from "@/config/leadConfig";
 // ============================================================
 
 export interface Lead {
-  id: number;
+  id: number | string;
   name: string;
   subText: string;
   phone: string;

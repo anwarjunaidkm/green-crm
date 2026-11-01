@@ -1,6 +1,7 @@
 "use client";
 
 import type { ElementType } from "react";
+import Link from "next/link";
 
 import {
   CalendarDays,
@@ -154,13 +155,13 @@ export default function StaffHome({ user }: StaffHomeProps) {
       {/* ================= QUICK ACTIONS ================= */}
 
       <section className="mt-4 grid grid-cols-4 gap-2 sm:gap-3 lg:mt-5">
-        <QuickAction icon={Plus} title="Add Lead" />
+        <QuickAction icon={Plus} title="Add Lead" href="/leads/add" />
 
         <QuickAction icon={Phone} title="Log Call" />
 
-        <QuickAction icon={CalendarDays} title="Follow-up" />
+        <QuickAction icon={CalendarDays} title="Follow-up" href="/leads/follow-ups" />
 
-        <QuickAction icon={Users} title="View Leads" />
+        <QuickAction icon={Users} title="View Leads" href="/leads" />
       </section>
 
       {/* ================= MAIN GRID ================= */}
@@ -236,15 +237,14 @@ export default function StaffHome({ user }: StaffHomeProps) {
 function QuickAction({
   icon: Icon,
   title,
+  href,
 }: {
   icon: ElementType;
   title: string;
+  href?: string;
 }) {
-  return (
-    <button
-      type="button"
-      className="flex min-h-[85px] flex-col items-center justify-center gap-2 rounded-[16px] border border-slate-200/80 bg-white px-1 transition hover:border-green-200 hover:bg-green-50/40 sm:min-h-[90px]"
-    >
+  const content = (
+    <>
       <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#e7f3e9] text-[#237638]">
         <Icon size={18} />
       </div>
@@ -252,6 +252,22 @@ function QuickAction({
       <span className="text-center text-[9px] font-medium text-slate-700 sm:text-[11px]">
         {title}
       </span>
+    </>
+  );
+
+  const className = "flex min-h-[85px] flex-col items-center justify-center gap-2 rounded-[16px] border border-slate-200/80 bg-white px-1 transition hover:border-green-200 hover:bg-green-50/40 sm:min-h-[90px]";
+
+  if (href) {
+    return (
+      <Link href={href} className={className}>
+        {content}
+      </Link>
+    );
+  }
+
+  return (
+    <button type="button" className={className}>
+      {content}
     </button>
   );
 }
