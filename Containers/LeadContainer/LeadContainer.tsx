@@ -1,5 +1,7 @@
-"use client";
+﻿"use client";
 
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
   CalendarDays,
   Check,
@@ -13,152 +15,65 @@ import {
 
 import { LEAD_STATUS } from "@/config/leadConfig";
 import LeadTable, { Lead } from "@/components/Common/LeadTable/LeadTable";
-
-// ============================================================
-// STATUS CARDS
-// ============================================================
-
-const stats = [
-  {
-    label: "New Lead",
-    value: 12,
-    icon: UserRound,
-    iconClass: "bg-blue-100 text-blue-600",
-  },
-  {
-    label: "Contacted",
-    value: 8,
-    icon: Phone,
-    iconClass: "bg-slate-100 text-slate-500",
-  },
-  {
-    label: "Interested",
-    value: 6,
-    icon: Users,
-    iconClass: "bg-amber-100 text-amber-600",
-  },
-  {
-    label: "Follow-up",
-    value: 4,
-    icon: CalendarDays,
-    iconClass: "bg-emerald-100 text-emerald-600",
-  },
-  {
-    label: "Proposal Sent",
-    value: 3,
-    icon: Send,
-    iconClass: "bg-violet-100 text-violet-600",
-  },
-  {
-    label: "Closed Won",
-    value: 2,
-    icon: Check,
-    iconClass: "bg-green-100 text-green-600",
-  },
-  {
-    label: "Not Interested",
-    value: 0,
-    icon: UserX,
-    iconClass: "bg-red-100 text-red-500",
-  },
-];
-
-// ============================================================
-// DUMMY LEADS
-// Later replace this with API data
-// ============================================================
-
-const leads: Lead[] = [
-  {
-    id: 1,
-    name: "Ahmed Ali",
-    subText: "Website Form",
-    phone: "+971 50 123 4567",
-    status: LEAD_STATUS.NEW_LEAD,
-    followUpDate: "28 Sep 2025",
-    followUpTime: "10:30 AM",
-    source: "Website",
-    assignedTo: "Anwar",
-    avatar: "A",
-  },
-  {
-    id: 2,
-    name: "Sarah Khan",
-    subText: "Product Inquiry",
-    phone: "+971 55 987 6543",
-    status: LEAD_STATUS.INTERESTED,
-    followUpDate: "29 Sep 2025",
-    followUpTime: "02:00 PM",
-    source: "Social Media",
-    assignedTo: "Fatima",
-    avatar: "S",
-  },
-  {
-    id: 3,
-    name: "Mohammed Raza",
-    subText: "Meta Ads",
-    phone: "+971 56 222 3344",
-    status: LEAD_STATUS.FOLLOW_UP,
-    followUpDate: "30 Sep 2025",
-    followUpTime: "11:00 AM",
-    source: "Meta Ads",
-    assignedTo: "Ali",
-    avatar: "M",
-  },
-  {
-    id: 4,
-    name: "Ayesha Siddiqui",
-    subText: "Referral",
-    phone: "+971 50 111 2233",
-    status: LEAD_STATUS.CONTACTED,
-    followUpDate: "27 Sep 2025",
-    followUpTime: "03:30 PM",
-    source: "Referral",
-    assignedTo: "Anwar",
-    avatar: "A",
-  },
-  {
-    id: 5,
-    name: "Khalid Al Mansoor",
-    subText: "Website Form",
-    phone: "+971 58 445 6677",
-    status: LEAD_STATUS.PROPOSAL_SENT,
-    followUpDate: "01 Oct 2025",
-    followUpTime: "10:00 AM",
-    source: "Website",
-    assignedTo: "Fatima",
-    avatar: "K",
-  },
-  {
-    id: 6,
-    name: "Sara Ahmed",
-    subText: "LinkedIn",
-    phone: "+971 52 778 8899",
-    status: LEAD_STATUS.NOT_INTERESTED,
-    followUpDate: "-",
-    source: "LinkedIn",
-    assignedTo: "John",
-    avatar: "S",
-  },
-  {
-    id: 7,
-    name: "Omar Farooq",
-    subText: "Cold Call",
-    phone: "+971 54 665 7788",
-    status: LEAD_STATUS.NEW_LEAD,
-    followUpDate: "28 Sep 2025",
-    followUpTime: "04:00 PM",
-    source: "Cold Call",
-    assignedTo: "Ali",
-    avatar: "O",
-  },
-];
+import { DEFAULT_LEADS, getStoredLeads } from "@/lib/leadStorage";
 
 // ============================================================
 // CONTAINER
 // ============================================================
 
 function LeadContainer() {
+  const [leads, setLeads] = useState<Lead[]>(DEFAULT_LEADS);
+
+  useEffect(() => {
+    setLeads(getStoredLeads());
+  }, []);
+
+  // Compute status counts dynamically from leads
+  const stats = [
+    {
+      label: "New Lead",
+      value: leads.filter((l) => l.status === LEAD_STATUS.NEW_LEAD).length,
+      icon: UserRound,
+      iconClass: "bg-blue-100 text-blue-600",
+    },
+    {
+      label: "Contacted",
+      value: leads.filter((l) => l.status === LEAD_STATUS.CONTACTED).length,
+      icon: Phone,
+      iconClass: "bg-slate-100 text-slate-500",
+    },
+    {
+      label: "Interested",
+      value: leads.filter((l) => l.status === LEAD_STATUS.INTERESTED).length,
+      icon: Users,
+      iconClass: "bg-amber-100 text-amber-600",
+    },
+    {
+      label: "Follow-up",
+      value: leads.filter((l) => l.status === LEAD_STATUS.FOLLOW_UP).length,
+      icon: CalendarDays,
+      iconClass: "bg-emerald-100 text-emerald-600",
+    },
+    {
+      label: "Proposal Sent",
+      value: leads.filter((l) => l.status === LEAD_STATUS.PROPOSAL_SENT).length,
+      icon: Send,
+      iconClass: "bg-violet-100 text-violet-600",
+    },
+    {
+      label: "Closed Won",
+      value: leads.filter((l) => l.status === LEAD_STATUS.CLOSED_WON).length,
+      icon: Check,
+      iconClass: "bg-green-100 text-green-600",
+    },
+    {
+      label: "Not Interested",
+      value: leads.filter((l) => l.status === LEAD_STATUS.NOT_INTERESTED).length,
+      icon: UserX,
+      iconClass: "bg-red-100 text-red-500",
+    },
+  ];
+
   return (
     <div className="min-h-full bg-[#f8fafc]">
       <div className="mx-auto w-full max-w-[1600px] px-4 py-5 sm:px-6 lg:px-8">
@@ -175,13 +90,13 @@ function LeadContainer() {
             </p>
           </div>
 
-          <button
-            type="button"
-            className="flex h-10 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 text-xs font-medium text-white shadow-sm transition hover:bg-blue-700"
+          <Link
+            href="/leads/add"
+            className="flex h-10 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 text-xs font-medium text-white shadow-sm transition hover:bg-blue-700 active:scale-[0.99]"
           >
             <Plus size={15} />
-            New Lead
-          </button>
+            Add Lead
+          </Link>
         </div>
 
         {/* ================= STATUS CARDS ================= */}
@@ -219,7 +134,7 @@ function LeadContainer() {
 
         {/* ================= TABLE ================= */}
 
-        <LeadTable data={leads} total={30} />
+        <LeadTable data={leads} total={leads.length} />
       </div>
     </div>
   );

@@ -179,13 +179,13 @@ export default function SuperAdminHome({ user }: SuperAdminHomeProps) {
           </p>
 
           <div className="mt-5 flex flex-wrap gap-2">
-            <button
-              type="button"
+            <Link
+              href="/leads/add"
               className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#176b32] px-4 text-xs font-medium text-white transition hover:bg-[#125727]"
             >
               <Plus size={16} />
               Add Lead
-            </button>
+            </Link>
 
             <button
               type="button"
@@ -246,7 +246,7 @@ export default function SuperAdminHome({ user }: SuperAdminHomeProps) {
       {/* QUICK ACTIONS */}
 
       <section className="mt-4 grid grid-cols-4 gap-2 sm:gap-3 lg:mt-5 lg:grid-cols-6">
-        <QuickAction icon={Plus} title="Add Lead" href="/leads" />
+        <QuickAction icon={Plus} title="Add Lead" href="/leads/add" />
 
         <QuickAction icon={ShoppingCart} title="Products" href="/products" />
 
