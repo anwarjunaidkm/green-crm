@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import {
   Activity,
   BarChart3,
@@ -19,6 +20,7 @@ import {
 } from "lucide-react";
 
 import type { User } from "@/types/auth";
+import { getStoredStaff } from "@/lib/staffStorage";
 
 interface SuperAdminHomeProps {
   user: User;
@@ -28,7 +30,7 @@ interface SuperAdminHomeProps {
 // DATA
 // ============================================================
 
-const stats = [
+const baseStats = [
   {
     title: "Total Leads",
     value: 248,
@@ -38,7 +40,7 @@ const stats = [
   },
   {
     title: "Total Staff",
-    value: 12,
+    value: 0,
     today: 1,
     icon: CircleUserRound,
     iconClass: "bg-violet-100 text-violet-600",
@@ -159,6 +161,24 @@ const leadStatus = [
 // ============================================================
 
 export default function SuperAdminHome({ user }: SuperAdminHomeProps) {
+  const [staffCount, setStaffCount] = useState(0);
+
+  useEffect(() => {
+    const loadStaffCount = () => setStaffCount(getStoredStaff().length);
+    loadStaffCount();
+    window.addEventListener("greenvedha:staff-change", loadStaffCount);
+    window.addEventListener("storage", loadStaffCount);
+
+    return () => {
+      window.removeEventListener("greenvedha:staff-change", loadStaffCount);
+      window.removeEventListener("storage", loadStaffCount);
+    };
+  }, []);
+
+  const stats = baseStats.map((item) =>
+    item.title === "Total Staff" ? { ...item, value: staffCount } : item,
+  );
+
   return (
     <main className="mx-auto w-full max-w-[1600px] px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
       {/* HERO */}
@@ -187,13 +207,13 @@ export default function SuperAdminHome({ user }: SuperAdminHomeProps) {
               Add Lead
             </Link>
 
-            <button
-              type="button"
+            <Link
+              href="/staff/add"
               className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#cfe0d2] bg-white px-4 text-xs font-medium text-[#245d32] transition hover:bg-[#f6faf7]"
             >
               <UserPlus size={16} />
               Add Staff
-            </button>
+            </Link>
           </div>
         </div>
 
@@ -247,6 +267,8 @@ export default function SuperAdminHome({ user }: SuperAdminHomeProps) {
 
       <section className="mt-4 grid grid-cols-4 gap-2 sm:gap-3 lg:mt-5 lg:grid-cols-6">
         <QuickAction icon={Plus} title="Add Lead" href="/leads/add" />
+
+        <QuickAction icon={UserPlus} title="Add Staff" href="/staff/add" />
 
         <QuickAction icon={ShoppingCart} title="Products" href="/products" />
 
