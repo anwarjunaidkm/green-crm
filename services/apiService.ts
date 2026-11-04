@@ -1,4 +1,5 @@
 import api from "@/lib/axios";
+import type { LoginApiResponse, User } from "@/types/auth";
 
 // ============================================================
 // LEADS API
@@ -68,20 +69,46 @@ export const deleteProduct = async (id: string | number) => {
 // AUTH API
 // ============================================================
 
-export const login = async (credentials: Record<string, unknown>) => {
-  const response = await api.post("/auth/login", credentials);
-  const data = response.data;
+export const login = async (credentials: { email: string; password?: string }) => {
+  const response = await api.post<LoginApiResponse>("/auth/login", credentials);
+  const resData = response.data;
 
-  if (data?.token && typeof window !== "undefined") {
-    sessionStorage.setItem("greenvedha_token", data.token);
+  const token = resData?.data?.token;
+  const apiUser = resData?.data?.user;
+
+  if (token && typeof window !== "undefined") {
+    sessionStorage.setItem("greenvedha_token", token);
+    localStorage.setItem("greenvedha_token", token);
   }
 
-  return data;
+  if (apiUser && typeof window !== "undefined") {
+    const sessionUser: User = {
+      id: apiUser.id,
+      name: apiUser.name,
+      email: apiUser.email,
+      role: apiUser.role_name === "super_admin" ? "super_admin" : "staff",
+      employee_id: apiUser.employee_id,
+      employee_name: apiUser.employee_name,
+      department_id: apiUser.department_id,
+      department_name: apiUser.department_name,
+      designation_id: apiUser.designation_id,
+      designation_name: apiUser.designation_name,
+      role_id: apiUser.role_id,
+      role_name: apiUser.role_name,
+      role_display_name: apiUser.role_display_name,
+      token,
+    };
+
+    sessionStorage.setItem("greenvedha_user", JSON.stringify(sessionUser));
+  }
+
+  return resData;
 };
 
 export const logout = async () => {
   if (typeof window !== "undefined") {
     sessionStorage.removeItem("greenvedha_token");
+    localStorage.removeItem("greenvedha_token");
     sessionStorage.removeItem("greenvedha_user");
   }
 };

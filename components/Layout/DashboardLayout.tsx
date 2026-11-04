@@ -8,6 +8,7 @@ import SidebarMenu from "@/components/SidebarMenu/SidebarMenu";
 import MobileBottomNav from "@/components/MobileBottomNav/MobileBottomNav";
 
 import type { User as UserType } from "@/types/auth";
+import { logout } from "@/services/apiService";
 
 interface DashboardLayoutProps {
   user: UserType;
@@ -28,7 +29,7 @@ export default function DashboardLayout({
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const isSuperAdmin = user.role === "super_admin";
-  const roleLabel = isSuperAdmin ? "Super Admin" : "Staff";
+  const roleLabel = user.role_display_name || (isSuperAdmin ? "Super Admin" : "Staff");
   const initial = user.name?.trim()?.charAt(0)?.toUpperCase() || "U";
 
   /* -------------------------------------------------------
@@ -52,7 +53,7 @@ export default function DashboardLayout({
      Logout
   ------------------------------------------------------- */
   const handleLogout = () => {
-    sessionStorage.removeItem("greenvedha_user");
+    logout();
     router.push("/");
   };
 
