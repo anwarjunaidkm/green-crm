@@ -6,7 +6,7 @@ export interface Staff {
   phone: string;
   email: string;
   password: string;
-  salary: number;
+  salary?: number;
   joiningDate: string;
   designation: string;
   status: StaffStatus;
