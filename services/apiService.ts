@@ -22,7 +22,7 @@ export const createLead = async (leadData: Record<string, unknown>) => {
 
 export const updateLead = async (
   id: string | number,
-  leadData: Record<string, unknown>
+  leadData: Record<string, unknown>,
 ) => {
   const response = await api.put(`/leads/${id}`, leadData);
   return response.data;
@@ -30,7 +30,7 @@ export const updateLead = async (
 
 export const updateLeadStatus = async (
   id: string | number,
-  statusData: Record<string, unknown>
+  statusData: Record<string, unknown>,
 ) => {
   const response = await api.patch(`/leads/${id}/status`, statusData);
   return response.data;
@@ -69,8 +69,14 @@ export const deleteProduct = async (id: string | number) => {
 // AUTH API
 // ============================================================
 
-export const login = async (credentials: { email: string; password?: string }) => {
-  const response = await api.post<LoginApiResponse>("/auth/login", credentials);
+export const login = async (credentials: {
+  email: string;
+  password?: string;
+}) => {
+  const response = await api.post<LoginApiResponse>(
+    "/api/v1/auth/login",
+    credentials,
+  );
   const resData = response.data;
 
   const token = resData?.data?.token;
