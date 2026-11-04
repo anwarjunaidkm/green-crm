@@ -17,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { login } from "@/services/apiService";
 
 function Login() {
   const router = useRouter();
@@ -47,75 +48,44 @@ function Login() {
     }
   };
 
-  /* =========================================================
-     LOGIN
-     
-     TEMPORARY FRONTEND LOGIN
+  /* Real Backend Authentication */
 
-     Super Admin:
-     admin@gmail.com
-     admin
-
-     Staff:
-     staff@gmail.com
-     staff
-
-     Later replace this with your real login API.
-  ========================================================= */
-
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     setError("");
-    setIsLoading(true);
 
-    const email = formData.email.trim().toLowerCase();
+    const email = formData.email.trim();
     const password = formData.password;
 
-    /* -------------------------
-       SUPER ADMIN
-    -------------------------- */
-
-    if (email === "admin@gmail.com" && password === "admin") {
-      const user = {
-        id: 1,
-        name: "Admin",
-        email: "admin@gmail.com",
-        role: "super_admin",
-      };
-
-      sessionStorage.setItem("greenvedha_user", JSON.stringify(user));
-
-      router.push("/home");
-
+    if (!email || !password) {
+      setError("Please enter both email and password.");
       return;
     }
 
-    /* -------------------------
-       STAFF
-    -------------------------- */
+    setIsLoading(true);
 
-    if (email === "staff@gmail.com" && password === "staff") {
-      const user = {
-        id: 2,
-        name: "Staff",
-        email: "staff@gmail.com",
-        role: "staff",
+    try {
+      const response = await login({ email, password });
+
+      if (response?.status && response?.data?.token) {
+        router.push("/home");
+      } else {
+        setError(response?.message || "Invalid email or password.");
+      }
+    } catch (err: unknown) {
+      const errorResponse = err as {
+        response?: { data?: { message?: string } };
+        message?: string;
       };
-
-      sessionStorage.setItem("greenvedha_user", JSON.stringify(user));
-
-      router.push("/home");
-
-      return;
+      const errorMsg =
+        errorResponse?.response?.data?.message ||
+        errorResponse?.message ||
+        "Login failed. Please check your credentials.";
+      setError(errorMsg);
+    } finally {
+      setIsLoading(false);
     }
-
-    /* -------------------------
-       INVALID LOGIN
-    -------------------------- */
-
-    setError("Invalid email or password.");
-    setIsLoading(false);
   };
 
   return (
