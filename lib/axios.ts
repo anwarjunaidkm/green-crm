@@ -2,7 +2,8 @@ import axios from "axios";
 
 // 1. Axios instance with environment base URL
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || "http://16.178.48.198/api/v1",
+  baseURL:
+    process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.sidharthsoman.online",
   headers: {
     "Content-Type": "application/json",
   },
