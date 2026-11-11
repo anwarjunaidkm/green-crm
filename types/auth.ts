@@ -34,6 +34,11 @@ export interface LoginApiResponse {
   data: LoginResponseData;
 }
 
+export interface LogoutApiResponse {
+  status: boolean;
+  message: string;
+}
+
 // ============================================================
 // LOGGED-IN USER SESSION
 // ============================================================
