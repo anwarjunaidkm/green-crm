@@ -1,5 +1,11 @@
 import api from "@/lib/axios";
 import type { LoginApiResponse, User } from "@/types/auth";
+import type {
+  CreateEmployeePayload,
+  CreateEmployeeResponse,
+  EmployeeFiltersData,
+  EmployeeFiltersResponse,
+} from "@/types/staff";
 
 // ============================================================
 // LEADS API
@@ -73,10 +79,7 @@ export const login = async (credentials: {
   email: string;
   password?: string;
 }) => {
-  const response = await api.post<LoginApiResponse>(
-    "/api/v1/auth/login",
-    credentials,
-  );
+  const response = await api.post<LoginApiResponse>("/auth/login", credentials);
   const resData = response.data;
 
   const token = resData?.data?.token;
@@ -117,4 +120,48 @@ export const logout = async () => {
     localStorage.removeItem("greenvedha_token");
     sessionStorage.removeItem("greenvedha_user");
   }
+};
+
+// ============================================================
+// EMPLOYEE / STAFF API
+// ============================================================
+
+/**
+ * Fetch employee filter options (departments, designations, roles) directly from API
+ */
+export const getEmployeeFilters = async (): Promise<EmployeeFiltersData> => {
+  const response = await api.get<EmployeeFiltersResponse>("/employee-filters");
+  if (response.data?.status && response.data?.data) {
+    return response.data.data;
+  }
+  return {
+    departments: [],
+    designations: [],
+    roles: [],
+  };
+};
+
+/**
+ * Create a new employee / staff member via backend API
+ */
+export const createEmployee = async (
+  payload: CreateEmployeePayload,
+): Promise<CreateEmployeeResponse> => {
+  const body = {
+    employee_name: payload.employee_name.trim(),
+    department: Number(payload.department),
+    designation: Number(payload.designation),
+    user_name: payload.user_name.trim(),
+    email: payload.email.trim().toLowerCase(),
+    phone: payload.phone.trim(),
+    role: Number(payload.role),
+    status: String(payload.status ?? "1"),
+    password: payload.password,
+  };
+
+  const response = await api.post<CreateEmployeeResponse>(
+    "/create-employee",
+    body,
+  );
+  return response.data;
 };

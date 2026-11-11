@@ -7,7 +7,7 @@ import { Edit3, Mail, Phone, Plus, Trash2, Users } from "lucide-react";
 import { deleteStaff, getStoredStaff } from "@/lib/staffStorage";
 import type { Staff } from "@/types/staff";
 
-function formatDate(date: string) {
+function formatDate(date?: string) {
   if (!date) return "-";
   return new Intl.DateTimeFormat("en-US", {
     day: "2-digit",
