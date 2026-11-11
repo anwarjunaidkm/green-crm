@@ -8,7 +8,7 @@ import {
   type FormEvent,
 } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useParams, usePathname, useRouter } from "next/navigation";
 import {
   ArrowLeft,
   BriefcaseBusiness,
@@ -24,14 +24,15 @@ import {
   UserCheck,
   UserRound,
   Wallet,
+  RefreshCw,
 } from "lucide-react";
 
-import { useCreateEmployee, useEmployeeFilters } from "@/hooks/useStaff";
 import {
-  createStaff,
-  getStaffById,
-  updateStaff,
-} from "@/lib/staffStorage";
+  useCreateEmployee,
+  useEmployeeFilters,
+  useUpdateEmployee,
+  useViewEmployee,
+} from "@/hooks/useStaff";
 import type { EmployeeFiltersData } from "@/types/staff";
 
 interface FormFields {
@@ -44,6 +45,7 @@ interface FormFields {
   role: number | string;
   status: "1" | "0";
   password: string;
+  current_password?: string;
   salary: string;
   joiningDate: string;
 }
@@ -58,13 +60,28 @@ const emptyForm: FormFields = {
   role: "",
   status: "1",
   password: "",
+  current_password: "",
   salary: "",
   joiningDate: "",
 };
 
-export default function StaffForm({ staffId }: { staffId?: string }) {
+export default function StaffForm({
+  staffId: propStaffId,
+}: {
+  staffId?: string;
+}) {
   const router = useRouter();
-  const isEditing = Boolean(staffId);
+  const params = useParams();
+  const pathname = usePathname();
+
+  const routeParamId = params?.id
+    ? Array.isArray(params.id)
+      ? params.id[0]
+      : params.id
+    : undefined;
+
+  const staffId = propStaffId || routeParamId;
+  const isEditing = Boolean(staffId) || Boolean(pathname?.includes("/edit"));
 
   const [form, setForm] = useState<FormFields>(emptyForm);
   const [hasManuallyEditedUsername, setHasManuallyEditedUsername] =
@@ -84,38 +101,59 @@ export default function StaffForm({ staffId }: { staffId?: string }) {
     roles: [],
   };
 
-  // 2. React Query Mutation for creating staff
-  const createEmployeeMutation = useCreateEmployee();
-  const isSaving = createEmployeeMutation.isPending;
+  // 2. Prefetch employee details using POST /view-employee when in edit mode
+  const {
+    data: employeeDetail,
+    isLoading: isLoadingEmployee,
+    isError: isErrorEmployee,
+    error: errorEmployee,
+  } = useViewEmployee(staffId);
 
-  // 3. Load existing staff data if in edit mode
+  // 3. React Query Mutations for create & update
+  const createEmployeeMutation = useCreateEmployee();
+  const updateEmployeeMutation = useUpdateEmployee();
+  const isSaving = isEditing
+    ? updateEmployeeMutation.isPending
+    : createEmployeeMutation.isPending;
+
+  // 4. Prepopulate form when employee detail is fetched from API
   useEffect(() => {
-    if (!staffId) return;
-    const existing = getStaffById(staffId);
-    if (!existing) {
-      router.replace("/staff");
-      return;
-    }
+    if (!employeeDetail) return;
 
     startTransition(() => {
       setForm({
-        employee_name: existing.fullName,
+        employee_name:
+          employeeDetail.employee_name || employeeDetail.name || "",
         user_name:
-          existing.userName ||
-          existing.fullName.toLowerCase().replace(/\s+/g, ""),
-        email: existing.email,
-        phone: existing.phone,
-        department: existing.departmentId || "",
-        designation: existing.designationId || "",
-        role: existing.roleId || "",
-        status: existing.status === "Active" ? "1" : "0",
+          employeeDetail.user_name || employeeDetail.username || "",
+        email: employeeDetail.email || "",
+        phone:
+          employeeDetail.phone || employeeDetail.phone_number || "",
+        department: employeeDetail.department_id
+          ? String(employeeDetail.department_id)
+          : "",
+        designation: employeeDetail.designation_id
+          ? String(employeeDetail.designation_id)
+          : "",
+        role: employeeDetail.role_id
+          ? String(employeeDetail.role_id)
+          : "",
+        status:
+          String(employeeDetail.status) === "1" ||
+          employeeDetail.status_text?.toLowerCase() === "active"
+            ? "1"
+            : "0",
         password: "",
-        salary: existing.salary !== undefined ? String(existing.salary) : "",
-        joiningDate: existing.joiningDate || "",
+        current_password: "",
+        salary:
+          employeeDetail.salary !== null && employeeDetail.salary !== undefined
+            ? String(employeeDetail.salary)
+            : "",
+        joiningDate: employeeDetail.joining_date || "",
       });
       setHasManuallyEditedUsername(true);
     });
-  }, [router, staffId]);
+  }, [employeeDetail]);
 
   // Handle Input Changes
   const handleChange = (
@@ -188,6 +226,11 @@ export default function StaffForm({ staffId }: { staffId?: string }) {
       nextErrors.password = "Password is required";
     }
 
+    if (isEditing && form.password && !form.current_password) {
+      nextErrors.current_password =
+        "Current password is required to change password";
+    }
+
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
   };
@@ -200,56 +243,46 @@ export default function StaffForm({ staffId }: { staffId?: string }) {
     setErrors((prev) => ({ ...prev, form: "" }));
 
     try {
-      // 1. Execute React Query Mutation -> POST /create-employee
-      await createEmployeeMutation.mutateAsync({
-        employee_name: form.employee_name,
-        department: Number(form.department),
-        designation: Number(form.designation),
-        user_name: form.user_name,
-        email: form.email,
-        phone: form.phone,
-        role: Number(form.role),
-        status: form.status,
-        password: form.password,
-        joining_date: form.joiningDate || undefined,
-        salary: form.salary ? Number(form.salary) : undefined,
-      });
+      const targetUpdateId = staffId || routeParamId || employeeDetail?.id;
 
-      // 2. Also sync to local CRM storage so staff list displays immediately
-      const deptObj = filters.departments.find(
-        (d) => String(d.id) === String(form.department)
-      );
-      const desigObj = filters.designations.find(
-        (d) => String(d.id) === String(form.designation)
-      );
-      const roleObj = filters.roles.find(
-        (r) => String(r.id) === String(form.role)
-      );
+      if (isEditing) {
+        if (!targetUpdateId) {
+          throw new Error("Unable to identify employee ID for update.");
+        }
 
-      const staffData = {
-        fullName: form.employee_name.trim(),
-        userName: form.user_name.trim(),
-        email: form.email.trim().toLowerCase(),
-        phone: form.phone.trim(),
-        password: form.password,
-        salary: form.salary ? Number(form.salary) : undefined,
-        joiningDate:
-          form.joiningDate || new Date().toISOString().split("T")[0],
-        departmentId: form.department,
-        departmentName: deptObj?.department_name || "",
-        designationId: form.designation,
-        designation: desigObj?.designation_name || "",
-        roleId: form.role,
-        roleName: roleObj?.name || "",
-        status:
-          form.status === "1" ? ("Active" as const) : ("Inactive" as const),
-      };
-
-      if (staffId) {
-        updateStaff(staffId, staffData);
+        // PUT /update-employee
+        await updateEmployeeMutation.mutateAsync({
+          id: targetUpdateId,
+          employee_name: form.employee_name,
+          department: Number(form.department),
+          designation: Number(form.designation),
+          user_name: form.user_name,
+          email: form.email,
+          phone: form.phone,
+          role: Number(form.role),
+          status: Number(form.status),
+          salary: form.salary ? Number(form.salary) : null,
+          joining_date: form.joiningDate || null,
+          current_password: form.current_password || undefined,
+          password: form.password || undefined,
+        });
       } else {
-        createStaff(staffData);
+        // POST /create-employee
+        await createEmployeeMutation.mutateAsync({
+          employee_name: form.employee_name,
+          department: Number(form.department),
+          designation: Number(form.designation),
+          user_name: form.user_name,
+          email: form.email,
+          phone: form.phone,
+          role: Number(form.role),
+          status: form.status,
+          password: form.password,
+          joining_date: form.joiningDate || undefined,
+          salary: form.salary ? Number(form.salary) : undefined,
+        });
       }
+
 
       setIsSuccess(true);
       setTimeout(() => {
@@ -282,8 +315,20 @@ export default function StaffForm({ staffId }: { staffId?: string }) {
         if (backendErrors.employee_name?.[0]) {
           mappedErrors.employee_name = backendErrors.employee_name[0];
         }
+        if (backendErrors.department?.[0]) {
+          mappedErrors.department = backendErrors.department[0];
+        }
+        if (backendErrors.designation?.[0]) {
+          mappedErrors.designation = backendErrors.designation[0];
+        }
+        if (backendErrors.role?.[0]) {
+          mappedErrors.role = backendErrors.role[0];
+        }
         if (backendErrors.password?.[0]) {
           mappedErrors.password = backendErrors.password[0];
+        }
+        if (backendErrors.current_password?.[0]) {
+          mappedErrors.current_password = backendErrors.current_password[0];
         }
 
         const firstMessage =
@@ -297,7 +342,9 @@ export default function StaffForm({ staffId }: { staffId?: string }) {
         const errorMsg =
           errorObj.response?.data?.message ||
           errorObj.message ||
-          "Failed to create staff member. Please check details and try again.";
+          (isEditing
+            ? "Failed to update staff member. Please check details and try again."
+            : "Failed to create staff member. Please check details and try again.");
         setErrors((prev) => ({ ...prev, form: errorMsg }));
       }
     }
@@ -313,6 +360,44 @@ export default function StaffForm({ staffId }: { staffId?: string }) {
   const selectedRole = filters.roles.find(
     (r) => String(r.id) === String(form.role)
   )?.display_name;
+
+  if (isEditing && isLoadingEmployee) {
+    return (
+      <main className="mx-auto w-full max-w-[1100px] px-4 py-12">
+        <div className="flex min-h-[360px] flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+          <RefreshCw size={28} className="animate-spin text-[#176b32]" />
+          <p className="mt-3 text-sm font-semibold text-slate-700">
+            Loading employee details...
+          </p>
+          <p className="mt-1 text-xs text-slate-400">
+            Fetching profile information from server.
+          </p>
+        </div>
+      </main>
+    );
+  }
+
+  if (isEditing && isErrorEmployee) {
+    return (
+      <main className="mx-auto w-full max-w-[1100px] px-4 py-12">
+        <div className="flex min-h-[360px] flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+          <p className="text-sm font-semibold text-red-600">
+            Failed to load employee details
+          </p>
+          <p className="mt-1 text-xs text-slate-400">
+            {(errorEmployee as Error)?.message ||
+              "Employee not found or server error."}
+          </p>
+          <Link
+            href="/staff"
+            className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#176b32] px-4 py-2 text-xs font-semibold text-white hover:bg-[#125727]"
+          >
+            Back to Staff List
+          </Link>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <div className="min-h-full bg-[#f7faf7]">
@@ -426,18 +511,33 @@ export default function StaffForm({ staffId }: { staffId?: string }) {
                   error={errors.phone}
                 />
 
+                {isEditing && (
+                  <Field
+                    icon={ShieldCheck}
+                    label="Current Password (Required only if changing password)"
+                    name="current_password"
+                    type={showPassword ? "text" : "password"}
+                    value={form.current_password || ""}
+                    onChange={handleChange}
+                    placeholder="Enter current password"
+                    error={errors.current_password}
+                  />
+                )}
+
                 <Field
                   icon={ShieldCheck}
-                  label={`Password${
-                    isEditing ? " (leave blank to keep current)" : ""
-                  }`}
+                  label={
+                    isEditing
+                      ? "New Password (Leave blank to keep current)"
+                      : "Password"
+                  }
                   name="password"
                   type={showPassword ? "text" : "password"}
                   value={form.password}
                   onChange={handleChange}
                   placeholder={
                     isEditing
-                      ? "Leave blank to keep current password"
+                      ? "Enter new password"
                       : "Enter password"
                   }
                   required={!isEditing}
@@ -817,3 +917,4 @@ function SectionTitle({
     </div>
   );
 }
+

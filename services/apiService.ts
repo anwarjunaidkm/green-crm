@@ -3,8 +3,15 @@ import type { LoginApiResponse, User } from "@/types/auth";
 import type {
   CreateEmployeePayload,
   CreateEmployeeResponse,
+  DeleteEmployeeResponse,
   EmployeeFiltersData,
   EmployeeFiltersResponse,
+  EmployeeListParams,
+  EmployeeListResponse,
+  UpdateEmployeePayload,
+  UpdateEmployeeResponse,
+  ViewEmployeeDetail,
+  ViewEmployeeResponse,
 } from "@/types/staff";
 
 // ============================================================
@@ -142,6 +149,22 @@ export const getEmployeeFilters = async (): Promise<EmployeeFiltersData> => {
 };
 
 /**
+ * Fetch employee list with search and pagination
+ */
+export const getEmployeeList = async (
+  params?: EmployeeListParams,
+): Promise<EmployeeListResponse> => {
+  const response = await api.get<EmployeeListResponse>("/employee-list", {
+    params: {
+      search: params?.search ?? "",
+      page: params?.page ?? 1,
+      per_page: params?.per_page ?? 10,
+    },
+  });
+  return response.data;
+};
+
+/**
  * Create a new employee / staff member via backend API
  */
 export const createEmployee = async (
@@ -174,6 +197,87 @@ export const createEmployee = async (
   const response = await api.post<CreateEmployeeResponse>(
     "/create-employee",
     body,
+  );
+  return response.data;
+};
+
+/**
+ * View employee details directly from API
+ * POST /view-employee with body { "id": id }
+ */
+export const viewEmployee = async (
+  id: number | string,
+): Promise<ViewEmployeeDetail> => {
+  const response = await api.post<ViewEmployeeResponse>("/view-employee", {
+    id: Number(id),
+  });
+  if (response.data?.status && response.data?.data) {
+    return response.data.data;
+  }
+  throw new Error(response.data?.message || "Failed to load employee details.");
+};
+
+/**
+ * Update an existing employee via API
+ * PUT /update-employee
+ */
+export const updateEmployee = async (
+  payload: UpdateEmployeePayload,
+): Promise<UpdateEmployeeResponse> => {
+  const body: Record<string, unknown> = {
+    id: Number(payload.id),
+    employee_name: payload.employee_name.trim(),
+    department: Number(payload.department),
+    designation: Number(payload.designation),
+    user_name: payload.user_name.trim(),
+    email: payload.email.trim().toLowerCase(),
+    phone: payload.phone.trim(),
+    role: Number(payload.role),
+    status: Number(payload.status),
+  };
+
+  if (
+    payload.salary !== undefined &&
+    payload.salary !== "" &&
+    payload.salary !== null
+  ) {
+    body.salary = Number(payload.salary);
+  } else {
+    body.salary = null;
+  }
+
+  if (payload.joining_date) {
+    body.joining_date = payload.joining_date;
+  } else {
+    body.joining_date = null;
+  }
+
+  if (payload.password) {
+    body.password = payload.password;
+    if (payload.current_password) {
+      body.current_password = payload.current_password;
+    }
+  }
+
+  const response = await api.put<UpdateEmployeeResponse>(
+    "/update-employee",
+    body,
+  );
+  return response.data;
+};
+
+/**
+ * Delete an employee via API
+ * DELETE /delete-employee with body { "id": id }
+ */
+export const deleteEmployee = async (
+  id: number | string,
+): Promise<DeleteEmployeeResponse> => {
+  const response = await api.delete<DeleteEmployeeResponse>(
+    "/delete-employee",
+    {
+      data: { id: Number(id) },
+    },
   );
   return response.data;
 };
