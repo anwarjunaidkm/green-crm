@@ -1,5 +1,5 @@
 import api from "@/lib/axios";
-import type { LoginApiResponse, User } from "@/types/auth";
+import type { LoginApiResponse, LogoutApiResponse, User } from "@/types/auth";
 import type {
   CreateEmployeePayload,
   CreateEmployeeResponse,
@@ -121,11 +121,22 @@ export const login = async (credentials: {
   return resData;
 };
 
-export const logout = async () => {
-  if (typeof window !== "undefined") {
-    sessionStorage.removeItem("greenvedha_token");
-    localStorage.removeItem("greenvedha_token");
-    sessionStorage.removeItem("greenvedha_user");
+/**
+ * Logout user session via API
+ * POST /auth/logout
+ */
+export const logout = async (): Promise<LogoutApiResponse | void> => {
+  try {
+    const response = await api.post<LogoutApiResponse>("/auth/logout");
+    return response.data;
+  } catch (error) {
+    console.error("Failed to call logout API:", error);
+  } finally {
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem("greenvedha_token");
+      localStorage.removeItem("greenvedha_token");
+      sessionStorage.removeItem("greenvedha_user");
+    }
   }
 };
 

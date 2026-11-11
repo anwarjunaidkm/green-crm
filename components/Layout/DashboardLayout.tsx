@@ -26,10 +26,12 @@ export default function DashboardLayout({
   const router = useRouter();
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const isSuperAdmin = user.role === "super_admin";
-  const roleLabel = user.role_display_name || (isSuperAdmin ? "Super Admin" : "Staff");
+  const roleLabel =
+    user.role_display_name || (isSuperAdmin ? "Super Admin" : "Staff");
   const initial = user.name?.trim()?.charAt(0)?.toUpperCase() || "U";
 
   /* -------------------------------------------------------
@@ -52,9 +54,17 @@ export default function DashboardLayout({
   /* -------------------------------------------------------
      Logout
   ------------------------------------------------------- */
-  const handleLogout = () => {
-    logout();
-    router.push("/");
+  const handleLogout = async () => {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
+    try {
+      await logout();
+    } catch (err) {
+      console.error("Logout failed:", err);
+    } finally {
+      setIsLoggingOut(false);
+      router.push("/");
+    }
   };
 
   return (
@@ -220,10 +230,14 @@ export default function DashboardLayout({
                         <button
                           type="button"
                           onClick={handleLogout}
-                          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium text-red-500 transition hover:bg-red-50"
+                          disabled={isLoggingOut}
+                          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium text-red-500 transition hover:bg-red-50 disabled:opacity-50"
                         >
-                          <LogOut size={15} className="shrink-0" />
-                          Logout
+                          <LogOut
+                            size={15}
+                            className={`shrink-0 ${isLoggingOut ? "animate-spin" : ""}`}
+                          />
+                          {isLoggingOut ? "Logging out..." : "Logout"}
                         </button>
                       </div>
                     </div>
