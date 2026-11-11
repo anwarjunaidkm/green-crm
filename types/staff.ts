@@ -47,6 +47,8 @@ export interface CreateEmployeePayload {
   role: number | string;
   status: string; // "1" for Active, "0" for Inactive
   password: string;
+  joining_date?: string;
+  salary?: number | string;
 }
 
 export interface CreateEmployeeResponse {

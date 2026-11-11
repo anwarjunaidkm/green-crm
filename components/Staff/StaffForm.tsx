@@ -211,6 +211,8 @@ export default function StaffForm({ staffId }: { staffId?: string }) {
         role: Number(form.role),
         status: form.status,
         password: form.password,
+        joining_date: form.joiningDate || undefined,
+        salary: form.salary ? Number(form.salary) : undefined,
       });
 
       // 2. Also sync to local CRM storage so staff list displays immediately

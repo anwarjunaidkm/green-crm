@@ -147,7 +147,7 @@ export const getEmployeeFilters = async (): Promise<EmployeeFiltersData> => {
 export const createEmployee = async (
   payload: CreateEmployeePayload,
 ): Promise<CreateEmployeeResponse> => {
-  const body = {
+  const body: Record<string, unknown> = {
     employee_name: payload.employee_name.trim(),
     department: Number(payload.department),
     designation: Number(payload.designation),
@@ -158,6 +158,18 @@ export const createEmployee = async (
     status: String(payload.status ?? "1"),
     password: payload.password,
   };
+
+  if (payload.joining_date) {
+    body.joining_date = payload.joining_date;
+  }
+
+  if (
+    payload.salary !== undefined &&
+    payload.salary !== "" &&
+    payload.salary !== null
+  ) {
+    body.salary = Number(payload.salary);
+  }
 
   const response = await api.post<CreateEmployeeResponse>(
     "/create-employee",
