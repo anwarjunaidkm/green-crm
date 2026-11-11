@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 
 import type { User } from "@/types/auth";
-import { getStoredStaff } from "@/lib/staffStorage";
+import { useEmployeeList } from "@/hooks/useStaff";
 
 interface SuperAdminHomeProps {
   user: User;
@@ -161,19 +161,9 @@ const leadStatus = [
 // ============================================================
 
 export default function SuperAdminHome({ user }: SuperAdminHomeProps) {
-  const [staffCount, setStaffCount] = useState(0);
+  const { data: staffData } = useEmployeeList({ page: 1, per_page: 1 });
+  const staffCount = staffData?.pagination?.total ?? 0;
 
-  useEffect(() => {
-    const loadStaffCount = () => setStaffCount(getStoredStaff().length);
-    loadStaffCount();
-    window.addEventListener("greenvedha:staff-change", loadStaffCount);
-    window.addEventListener("storage", loadStaffCount);
-
-    return () => {
-      window.removeEventListener("greenvedha:staff-change", loadStaffCount);
-      window.removeEventListener("storage", loadStaffCount);
-    };
-  }, []);
 
   const stats = baseStats.map((item) =>
     item.title === "Total Staff" ? { ...item, value: staffCount } : item,
@@ -537,3 +527,4 @@ function ActivityItem({
     </div>
   );
 }
+

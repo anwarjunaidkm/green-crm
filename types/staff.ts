@@ -59,6 +59,123 @@ export interface CreateEmployeeResponse {
 }
 
 // ============================================================
+// EMPLOYEE LIST API TYPES
+// ============================================================
+
+export interface EmployeeListItem {
+  id: number;
+  name: string;
+  contact?: string;
+  email: string;
+  phone: string;
+  designation: string;
+  designation_id?: number;
+  salary?: number | string | null;
+  joining_date?: string | null;
+  joining_date_formatted?: string | null;
+  status: number | string;
+  status_text: string;
+  department: string;
+  department_id?: number;
+  role: string;
+  role_id?: number;
+  created_at?: string;
+}
+
+export interface EmployeePagination {
+  current_page: number;
+  per_page: number;
+  total: number;
+  last_page: number;
+  from: number | null;
+  to: number | null;
+  has_more_pages: boolean;
+}
+
+export interface EmployeeListResponse {
+  status: boolean;
+  message: string;
+  data: EmployeeListItem[];
+  pagination: EmployeePagination;
+}
+
+export interface EmployeeListParams {
+  search?: string;
+  page?: number;
+  per_page?: number;
+}
+
+// ============================================================
+// VIEW EMPLOYEE API TYPES
+// ============================================================
+
+export interface ViewEmployeeDetail {
+  id: number;
+  name?: string;
+  employee_name: string;
+  department?: string;
+  department_id?: number | string;
+  designation?: string;
+  designation_id?: number | string;
+  username?: string;
+  user_name?: string;
+  email: string;
+  phone: string;
+  phone_number?: string;
+  salary?: number | string | null;
+  joining_date?: string | null;
+  joining_date_formatted?: string | null;
+  role?: string;
+  role_id?: number | string;
+  status: number | string;
+  status_text?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface ViewEmployeeResponse {
+  status: boolean;
+  message: string;
+  data: ViewEmployeeDetail;
+}
+
+// ============================================================
+// UPDATE EMPLOYEE API TYPES
+// ============================================================
+
+export interface UpdateEmployeePayload {
+  id: number | string;
+  employee_name: string;
+  department: number | string;
+  designation: number | string;
+  user_name: string;
+  email: string;
+  phone: string;
+  salary?: number | string | null;
+  joining_date?: string | null;
+  role: number | string;
+  status: number | string;
+  current_password?: string;
+  password?: string;
+}
+
+export interface UpdateEmployeeResponse {
+  status: boolean;
+  message: string;
+  id?: number | string;
+  errors?: Record<string, string[]>;
+}
+
+// ============================================================
+// DELETE EMPLOYEE API TYPES
+// ============================================================
+
+export interface DeleteEmployeeResponse {
+  status: boolean;
+  message: string;
+}
+
+// ============================================================
 // CRM LOCAL STAFF MODEL
 // ============================================================
 
