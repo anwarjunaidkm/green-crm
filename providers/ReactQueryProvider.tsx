@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 // ============================================================
@@ -54,6 +54,38 @@ export default function ReactQueryProvider({ children }: ReactQueryProviderProps
   // suspend because React will throw away the client on the initial
   // render if it suspends and there is no boundary
   const [queryClient] = useState(() => getQueryClient());
+
+  // Suppress harmless React DevTools extension bridge shutdown errors during route transitions
+  useEffect(() => {
+    const isBridgeError = (msg?: string) =>
+      typeof msg === "string" &&
+      msg.includes("Cannot send a message through a Bridge that has been shut down");
+
+    const handleError = (event: ErrorEvent) => {
+      const msg = event?.message || event?.error?.message;
+      const file = event?.filename || "";
+      if (isBridgeError(msg) || file.includes("react_devtools_backend")) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      }
+    };
+
+    const handleRejection = (event: PromiseRejectionEvent) => {
+      const reasonMsg = event?.reason?.message || String(event?.reason || "");
+      if (isBridgeError(reasonMsg)) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      }
+    };
+
+    window.addEventListener("error", handleError, true);
+    window.addEventListener("unhandledrejection", handleRejection, true);
+
+    return () => {
+      window.removeEventListener("error", handleError, true);
+      window.removeEventListener("unhandledrejection", handleRejection, true);
+    };
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
