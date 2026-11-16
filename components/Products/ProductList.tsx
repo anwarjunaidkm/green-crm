@@ -1,103 +1,183 @@
-﻿"use client";
+"use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
   AlertTriangle,
   Boxes,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   Package,
   Pencil,
+  Plus,
+  RefreshCw,
   Search,
-  ShoppingCart,
-  Tag,
-  Trash2,
+  X,
 } from "lucide-react";
 
-import { deleteProduct } from "@/lib/productStorage";
-import type { Product, ProductStatus } from "@/types/product";
+import { useProductFilters, useProductList } from "@/hooks/useProducts";
+import type { ProductListItem } from "@/types/product";
 
-interface ProductListProps {
-  initialProducts: Product[];
+const PER_PAGE = 10;
+
+function formatDate(date?: string | null): string {
+  if (!date) return "-";
+  try {
+    const d = new Date(date.includes("T") ? date : `${date}T00:00:00`);
+    if (isNaN(d.getTime())) return date;
+    return new Intl.DateTimeFormat("en-US", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    }).format(d);
+  } catch {
+    return date;
+  }
 }
 
-export default function ProductList({ initialProducts }: ProductListProps) {
-  const [products, setProducts] = useState<Product[]>(initialProducts);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [activeFilter, setActiveFilter] = useState<
-    "All" | "Active" | "In Stock" | "Out of Stock"
-  >("All");
+function formatPrice(val?: number | string | null): string {
+  if (val === undefined || val === null || val === "") return "0";
+  const num = Number(val);
+  if (isNaN(num)) return String(val);
+  return num.toLocaleString();
+}
 
-  const handleDelete = (id: string, name: string) => {
-    if (confirm(`Are you sure you want to delete "${name}"?`)) {
-      const updated = deleteProduct(id);
-      setProducts(updated);
-    }
+export default function ProductList() {
+  const [page, setPage] = useState(1);
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState<string | number>("");
+
+  // 1. Fetch filter options (statuses)
+  const { data: filtersData } = useProductFilters();
+
+  const filterOptions: { id: string; name: string; value: string | number }[] =
+    [
+      { id: "all", name: "All", value: "" },
+      ...(filtersData?.product_status?.map((st) => ({
+        id: String(st.id),
+        name: st.name,
+        value: st.value ?? st.id,
+      })) || []),
+    ];
+
+  // Debounce search input by 350ms
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchInput.trim());
+      setPage(1);
+    }, 350);
+    return () => clearTimeout(handler);
+  }, [searchInput]);
+
+  // Fetch product list from API via React Query
+  // Exactly matching params: ?per_page=10&page=1&search=&status=
+  const { data, isLoading, isFetching, isError, error, refetch } =
+    useProductList({
+      page,
+      per_page: PER_PAGE,
+      search: debouncedSearch,
+      status: selectedStatus,
+    });
+
+  const products: ProductListItem[] = data?.data ?? [];
+  const pagination = data?.pagination;
+  const summary = data?.summary ?? {
+    total_products: 0,
+    in_stock: 0,
+    out_of_stock: 0,
+    categories: 0,
   };
 
-  const filteredProducts = products.filter((prod) => {
-    const matchesSearch =
-      prod.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      prod.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      prod.category.toLowerCase().includes(searchQuery.toLowerCase());
+  const totalPages = pagination?.last_page ?? 1;
+  const totalRecords = pagination?.total ?? 0;
 
-    if (!matchesSearch) return false;
+  const handlePageChange = (newPage: number) => {
+    if (newPage < 1 || newPage > totalPages || newPage === page) return;
+    setPage(newPage);
+  };
 
-    if (activeFilter === "Active") return prod.status === "Active";
-    if (activeFilter === "In Stock") return prod.stock > 0;
-    if (activeFilter === "Out of Stock")
-      return prod.stock === 0 || prod.status === "Out of Stock";
+  const handleStatusChange = (val: string | number) => {
+    setSelectedStatus(val);
+    setPage(1);
+  };
 
-    return true;
-  });
-
-  const totalCount = products.length;
-  const inStockCount = products.filter((p) => p.stock > 0).length;
-  const outOfStockCount = products.filter(
-    (p) => p.stock === 0 || p.status === "Out of Stock"
-  ).length;
-  const uniqueCategories = new Set(products.map((p) => p.category)).size;
+  const handleClearSearch = () => {
+    setSearchInput("");
+    setDebouncedSearch("");
+    setPage(1);
+  };
 
   return (
     <div className="min-h-full bg-[#f8fafc]">
       <div className="mx-auto w-full max-w-[1600px] px-4 py-5 sm:px-6 lg:px-8">
         {/* ================= HEADER ================= */}
-        <div className="mb-6">
-          <div className="flex items-center gap-2">
-            <h1 className="text-[22px] font-semibold tracking-[-0.3px] text-slate-900 sm:text-[24px]">
-              Product Catalog
-            </h1>
-            <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-semibold text-[#176b32]">
-              Admin
-            </span>
+        <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-[22px] font-semibold tracking-[-0.3px] text-slate-900 sm:text-[24px]">
+                Product Catalog
+              </h1>
+              {pagination && (
+                <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-semibold text-[#176b32]">
+                  {totalRecords} {totalRecords === 1 ? "product" : "products"}
+                </span>
+              )}
+            </div>
+            <p className="mt-1 text-xs text-slate-400">
+              Manage your product catalog, pricing, SKU codes, and inventory
+              levels
+            </p>
           </div>
-          <p className="mt-1 text-xs text-slate-400">
-            Manage your product catalog, pricing, SKU codes, and inventory levels
-          </p>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => refetch()}
+              disabled={isFetching}
+              title="Refresh product list"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 disabled:opacity-50 shadow-sm"
+            >
+              <RefreshCw
+                size={16}
+                className={isFetching ? "animate-spin text-[#176b32]" : ""}
+              />
+            </button>
+
+            <Link
+              href="/products/add"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#176b32] px-4 text-xs font-semibold text-white shadow-sm transition hover:bg-[#125727] active:scale-[0.99]"
+            >
+              <Plus size={16} />
+              Add Product
+            </Link>
+          </div>
         </div>
 
-        {/* ================= STATS CARDS ================= */}
+        {/* ================= STATS CARDS (SUMMARY FROM API) ================= */}
         <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:gap-4">
           <StatCard
             label="Total Products"
-            value={totalCount}
+            value={summary.total_products}
             icon={Package}
             color="bg-emerald-100 text-[#176b32]"
           />
           <StatCard
             label="In Stock"
-            value={inStockCount}
+            value={summary.in_stock}
             icon={CheckCircle2}
             color="bg-blue-100 text-blue-600"
           />
           <StatCard
             label="Out of Stock"
-            value={outOfStockCount}
+            value={summary.out_of_stock}
             icon={AlertTriangle}
             color="bg-amber-100 text-amber-600"
           />
           <StatCard
             label="Categories"
-            value={uniqueCategories}
+            value={summary.categories}
             icon={Boxes}
             color="bg-violet-100 text-violet-600"
           />
@@ -105,7 +185,7 @@ export default function ProductList({ initialProducts }: ProductListProps) {
 
         {/* ================= SEARCH & FILTERS ================= */}
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          {/* SEARCH */}
+          {/* SEARCH BAR */}
           <div className="relative w-full max-w-md">
             <Search
               size={16}
@@ -114,32 +194,62 @@ export default function ProductList({ initialProducts }: ProductListProps) {
             <input
               type="text"
               placeholder="Search by product name, SKU, category..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-xs text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#176b32] focus:ring-2 focus:ring-[#176b32]/15"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-9 text-xs text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#176b32] focus:ring-2 focus:ring-[#176b32]/15"
             />
+            {searchInput && (
+              <button
+                type="button"
+                onClick={handleClearSearch}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                title="Clear search"
+              >
+                <X size={15} />
+              </button>
+            )}
           </div>
 
-          {/* FILTER PILLS */}
+          {/* FILTER PILLS BASED ON FILTER API */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
-            {(["All", "Active", "In Stock", "Out of Stock"] as const).map(
-              (filter) => (
+            {filterOptions.map((option) => {
+              const isSelected =
+                String(selectedStatus) === String(option.value);
+              return (
                 <button
-                  key={filter}
+                  key={option.id}
                   type="button"
-                  onClick={() => setActiveFilter(filter)}
-                  className={`rounded-xl px-3.5 py-2 text-xs font-medium transition ${
-                    activeFilter === filter
+                  onClick={() => handleStatusChange(option.value)}
+                  className={`whitespace-nowrap rounded-xl px-3.5 py-2 text-xs font-medium transition ${
+                    isSelected
                       ? "bg-[#176b32] text-white shadow-sm"
                       : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
                   }`}
                 >
-                  {filter}
+                  {option.name}
                 </button>
-              )
-            )}
+              );
+            })}
           </div>
         </div>
+
+        {/* ================= ERROR STATE ================= */}
+        {isError && (
+          <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-xs text-red-800">
+            <p className="font-semibold">Failed to load product catalog.</p>
+            <p className="mt-0.5 text-red-600">
+              {(error as { message?: string })?.message ||
+                "Please check your network connection and try again."}
+            </p>
+            <button
+              type="button"
+              onClick={() => refetch()}
+              className="mt-2 inline-flex items-center gap-1 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700"
+            >
+              <RefreshCw size={12} /> Retry
+            </button>
+          </div>
+        )}
 
         {/* ================= DESKTOP TABLE ================= */}
         <div className="hidden overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:block">
@@ -156,102 +266,145 @@ export default function ProductList({ initialProducts }: ProductListProps) {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-xs">
-              {filteredProducts.length === 0 ? (
+              {isLoading ? (
                 <tr>
                   <td
                     colSpan={7}
-                    className="px-5 py-12 text-center text-slate-400"
+                    className="px-5 py-16 text-center text-slate-400"
                   >
-                    No products found matching your search.
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <RefreshCw
+                        size={20}
+                        className="animate-spin text-[#176b32]"
+                      />
+                      <span className="text-xs font-medium text-slate-500">
+                        Loading products from catalog...
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+              ) : products.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={7}
+                    className="px-5 py-14 text-center text-slate-400"
+                  >
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <Package size={28} className="text-slate-300" />
+                      <p className="font-medium text-slate-600">
+                        No products found
+                      </p>
+                      <p className="text-[11px] text-slate-400">
+                        {debouncedSearch || selectedStatus !== ""
+                          ? "Try clearing your search or filters to see more results."
+                          : "No products added yet. Click 'Add Product' to create one."}
+                      </p>
+                    </div>
                   </td>
                 </tr>
               ) : (
-                filteredProducts.map((prod) => (
-                  <tr
-                    key={prod.id}
-                    className="transition hover:bg-slate-50/60"
-                  >
-                    {/* PRODUCT NAME & SKU */}
-                    <td className="px-5 py-3.5">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-sm font-semibold text-[#176b32]">
-                          <Package size={18} />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="truncate font-semibold text-slate-900">
-                            {prod.name}
-                          </p>
-                          <p className="truncate text-[11px] font-mono text-slate-400">
-                            SKU: {prod.sku}
-                          </p>
-                        </div>
-                      </div>
-                    </td>
+                products.map((prod) => {
+                  const sellingPrice = prod.selling_price ?? prod.price;
+                  const mrpVal = prod.mrp;
+                  const stockCount = Number(
+                    prod.initial_stock ?? prod.stock ?? 0,
+                  );
+                  const unitName = prod.unit_name || prod.unit || "";
+                  const categoryName =
+                    prod.category_name || prod.category || "-";
+                  const skuCode = prod.item_code || prod.sku || "-";
+                  const dateStr = prod.created_at || prod.createdAt;
 
-                    {/* CATEGORY */}
-                    <td className="px-5 py-3.5">
-                      <span className="rounded-lg bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-700">
-                        {prod.category}
-                      </span>
-                    </td>
+                  return (
+                    <tr
+                      key={prod.id}
+                      className="transition hover:bg-slate-50/60"
+                    >
+                      {/* PRODUCT NAME & SKU */}
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-sm font-semibold text-[#176b32]">
+                            <Package size={18} />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="truncate font-semibold text-slate-900">
+                              {prod.name}
+                            </p>
+                            <p className="truncate text-[11px] font-mono text-slate-400">
+                              SKU: {skuCode}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
 
-                    {/* PRICE & MRP */}
-                    <td className="px-5 py-3.5">
-                      <div className="flex items-baseline gap-1.5">
-                        <span className="font-semibold text-slate-900">
-                          ₹{prod.price}
+                      {/* CATEGORY */}
+                      <td className="px-5 py-3.5">
+                        <span className="rounded-lg bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-700">
+                          {categoryName}
                         </span>
-                        {prod.mrp && prod.mrp > prod.price && (
-                          <span className="text-[11px] text-slate-400 line-through">
-                            ₹{prod.mrp}
+                      </td>
+
+                      {/* PRICE & MRP */}
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-baseline gap-1.5">
+                          <span className="font-semibold text-slate-900">
+                            {formatPrice(sellingPrice)}
                           </span>
-                        )}
-                      </div>
-                    </td>
+                          {mrpVal && Number(mrpVal) > Number(sellingPrice) && (
+                            <span className="text-[11px] text-slate-400 line-through">
+                              {formatPrice(mrpVal)}
+                            </span>
+                          )}
+                        </div>
+                      </td>
 
-                    {/* STOCK & UNIT */}
-                    <td className="px-5 py-3.5">
-                      <div className="flex items-center gap-1.5">
-                        <span
-                          className={`h-2 w-2 rounded-full ${
-                            prod.stock > 20
-                              ? "bg-emerald-500"
-                              : prod.stock > 0
-                              ? "bg-amber-500"
-                              : "bg-red-500"
-                          }`}
+                      {/* STOCK & UNIT */}
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className={`h-2 w-2 rounded-full ${
+                              stockCount > 20
+                                ? "bg-emerald-500"
+                                : stockCount > 0
+                                  ? "bg-amber-500"
+                                  : "bg-red-500"
+                            }`}
+                          />
+                          <span className="font-medium text-slate-800">
+                            {stockCount} {unitName}
+                          </span>
+                        </div>
+                      </td>
+
+                      {/* STATUS */}
+                      <td className="px-5 py-3.5">
+                        <StatusBadge
+                          status={prod.status}
+                          statusText={prod.status_text}
+                          stock={stockCount}
                         />
-                        <span className="font-medium text-slate-800">
-                          {prod.stock} {prod.unit}s
-                        </span>
-                      </div>
-                    </td>
+                      </td>
 
-                    {/* STATUS */}
-                    <td className="px-5 py-3.5">
-                      <StatusBadge status={prod.status} stock={prod.stock} />
-                    </td>
+                      {/* DATE */}
+                      <td className="px-5 py-3.5 text-slate-500">
+                        {formatDate(dateStr)}
+                      </td>
 
-                    {/* DATE */}
-                    <td className="px-5 py-3.5 text-slate-500">
-                      {prod.createdAt}
-                    </td>
-
-                    {/* ACTIONS */}
-                    <td className="px-5 py-3.5 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(prod.id, prod.name)}
-                          className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-red-50 hover:text-red-500"
-                          title="Delete Product"
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                      {/* ACTIONS: JUST EDIT BUTTON */}
+                      <td className="px-5 py-3.5 text-right">
+                        <div className="flex items-center justify-end">
+                          <Link
+                            href={`/products/${prod.id}/edit`}
+                            className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-emerald-50 hover:text-[#176b32]"
+                            title="Edit Product"
+                          >
+                            <Pencil size={15} />
+                          </Link>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -259,63 +412,134 @@ export default function ProductList({ initialProducts }: ProductListProps) {
 
         {/* ================= MOBILE CARDS ================= */}
         <div className="space-y-3 lg:hidden">
-          {filteredProducts.length === 0 ? (
+          {isLoading ? (
+            <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center text-xs text-slate-400">
+              <RefreshCw
+                size={20}
+                className="mx-auto mb-2 animate-spin text-[#176b32]"
+              />
+              Loading products...
+            </div>
+          ) : products.length === 0 ? (
             <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-xs text-slate-400">
+              <Package size={28} className="mx-auto mb-2 text-slate-300" />
               No products found matching your search.
             </div>
           ) : (
-            filteredProducts.map((prod) => (
-              <div
-                key={prod.id}
-                className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
-                      <Package size={20} />
+            products.map((prod) => {
+              const sellingPrice = prod.selling_price ?? prod.price;
+              const mrpVal = prod.mrp;
+              const stockCount = Number(prod.initial_stock ?? prod.stock ?? 0);
+              const unitName = prod.unit_name || prod.unit || "";
+              const categoryName = prod.category_name || prod.category || "-";
+              const skuCode = prod.item_code || prod.sku || "-";
+
+              return (
+                <div
+                  key={prod.id}
+                  className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
+                        <Package size={20} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-slate-900">
+                          {prod.name}
+                        </p>
+                        <p className="text-[11px] font-mono text-slate-400">
+                          SKU: {skuCode} • {categoryName}
+                        </p>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-slate-900">
-                        {prod.name}
-                      </p>
-                      <p className="text-[11px] font-mono text-slate-400">
-                        SKU: {prod.sku} • {prod.category}
-                      </p>
-                    </div>
+
+                    <StatusBadge
+                      status={prod.status}
+                      statusText={prod.status_text}
+                      stock={stockCount}
+                    />
                   </div>
 
-                  <StatusBadge status={prod.status} stock={prod.stock} />
-                </div>
-
-                <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3 text-xs">
-                  <div>
-                    <span className="text-sm font-bold text-slate-900">
-                      ₹{prod.price}
-                    </span>
-                    {prod.mrp && prod.mrp > prod.price && (
-                      <span className="ml-1.5 text-[11px] text-slate-400 line-through">
-                        ₹{prod.mrp}
+                  <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3 text-xs">
+                    <div>
+                      <span className="text-sm font-bold text-slate-900">
+                        {formatPrice(sellingPrice)}
                       </span>
-                    )}
+                      {mrpVal && Number(mrpVal) > Number(sellingPrice) && (
+                        <span className="ml-1.5 text-[11px] text-slate-400 line-through">
+                          {formatPrice(mrpVal)}
+                        </span>
+                      )}
+                    </div>
+
+                    <span className="text-[11px] text-slate-600">
+                      Stock: <strong>{stockCount}</strong> {unitName}
+                    </span>
+
+                    {/* ACTION: JUST EDIT BUTTON */}
+                    <Link
+                      href={`/products/${prod.id}/edit`}
+                      className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-500 hover:bg-emerald-50 hover:text-[#176b32]"
+                      title="Edit Product"
+                    >
+                      <Pencil size={14} />
+                    </Link>
                   </div>
-
-                  <span className="text-[11px] text-slate-600">
-                    Stock: <strong>{prod.stock}</strong> {prod.unit}s
-                  </span>
-
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(prod.id, prod.name)}
-                    className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-500"
-                    title="Delete Product"
-                  >
-                    <Trash2 size={14} />
-                  </button>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
+
+        {/* ================= PAGINATION ================= */}
+        {totalRecords > 0 && (
+          <div className="mt-5 flex flex-col items-center justify-between gap-3 sm:flex-row">
+            <p className="text-xs text-slate-500">
+              Showing{" "}
+              <span className="font-semibold text-slate-800">
+                {pagination?.from ??
+                  (products.length > 0 ? (page - 1) * PER_PAGE + 1 : 0)}
+              </span>{" "}
+              to{" "}
+              <span className="font-semibold text-slate-800">
+                {pagination?.to ??
+                  (products.length > 0
+                    ? (page - 1) * PER_PAGE + products.length
+                    : 0)}
+              </span>{" "}
+              of{" "}
+              <span className="font-semibold text-slate-800">
+                {totalRecords}
+              </span>{" "}
+              products
+            </p>
+
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => handlePageChange(page - 1)}
+                disabled={page <= 1 || isFetching}
+                className="inline-flex h-9 items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <ChevronLeft size={14} /> Previous
+              </button>
+
+              <span className="px-2 text-xs font-medium text-slate-600">
+                Page {page} of {totalPages}
+              </span>
+
+              <button
+                type="button"
+                onClick={() => handlePageChange(page + 1)}
+                disabled={page >= totalPages || isFetching}
+                className="inline-flex h-9 items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Next <ChevronRight size={14} />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -323,12 +547,18 @@ export default function ProductList({ initialProducts }: ProductListProps) {
 
 function StatusBadge({
   status,
+  statusText,
   stock,
 }: {
-  status: ProductStatus;
+  status?: number | string;
+  statusText?: string;
   stock: number;
 }) {
-  const isOutOfStock = stock === 0 || status === "Out of Stock";
+  const isOutOfStock =
+    stock === 0 ||
+    status === 3 ||
+    status === "3" ||
+    statusText?.toLowerCase() === "out of stock";
 
   if (isOutOfStock) {
     return (
@@ -338,7 +568,7 @@ function StatusBadge({
     );
   }
 
-  if (status === "Draft") {
+  if (status === 2 || status === "2" || statusText?.toLowerCase() === "draft") {
     return (
       <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-semibold text-slate-600">
         Draft
@@ -348,7 +578,7 @@ function StatusBadge({
 
   return (
     <span className="inline-flex rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-700 ring-1 ring-emerald-600/20">
-      Active
+      {statusText || "Active"}
     </span>
   );
 }

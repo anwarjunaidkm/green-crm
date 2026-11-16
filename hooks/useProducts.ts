@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getProductFilters,
   getProducts,
+  getProductList,
   getProductById,
   createProduct,
   deleteProduct,
@@ -11,6 +12,8 @@ import {
 import type {
   CreateProductPayload,
   ProductFiltersData,
+  ProductListParams,
+  ProductListResponse,
 } from "@/types/product";
 
 // ============================================================
@@ -34,6 +37,25 @@ export function useProductFilters() {
     queryKey: productKeys.filters,
     queryFn: getProductFilters,
     staleTime: 5 * 60 * 1000,
+  });
+}
+
+// 2. Fetch product list with search, pagination, and status filters
+export function useProductList(params: ProductListParams = {}) {
+  const page = params.page ?? 1;
+  const per_page = params.per_page ?? 10;
+  const search = params.search ?? "";
+  const status = params.status ?? "";
+  const filter = params.filter ?? "";
+
+  return useQuery<ProductListResponse>({
+    queryKey: [
+      ...productKeys.lists(),
+      { page, per_page, search, status, filter },
+    ],
+    queryFn: () => getProductList({ page, per_page, search, status, filter }),
+    placeholderData: (previousData) => previousData,
+    staleTime: 60 * 1000,
   });
 }
 

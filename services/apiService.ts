@@ -5,6 +5,8 @@ import type {
   CreateProductResponse,
   ProductFiltersData,
   ProductFiltersResponse,
+  ProductListParams,
+  ProductListResponse,
 } from "@/types/product";
 import type {
   CreateEmployeePayload,
@@ -82,6 +84,31 @@ export const getProductFilters = async (): Promise<ProductFiltersData> => {
 
 export const getProducts = async () => {
   const response = await api.get("/products");
+  return response.data;
+};
+
+/**
+ * Fetch product list with search, status filtering, and pagination
+ * GET /product-list
+ */
+export const getProductList = async (
+  params?: ProductListParams,
+): Promise<ProductListResponse> => {
+  const queryParams: Record<string, string | number> = {
+    per_page: params?.per_page ?? 10,
+    page: params?.page ?? 1,
+    search: params?.search ?? "",
+    status:
+      params?.status !== undefined &&
+      params?.status !== null &&
+      params?.status !== "All"
+        ? params.status
+        : "",
+  };
+
+  const response = await api.get<ProductListResponse>("/product-list", {
+    params: queryParams,
+  });
   return response.data;
 };
 

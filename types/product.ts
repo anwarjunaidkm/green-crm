@@ -38,6 +38,66 @@ export interface ProductFiltersResponse {
 }
 
 // ============================================================
+// PRODUCT LIST API PAYLOAD & RESPONSE
+// ============================================================
+
+export interface ProductListItem {
+  id: number | string;
+  name: string;
+  item_code?: string;
+  sku?: string;
+  category?: string | null;
+  category_name?: string | null;
+  category_id?: number | null;
+  unit?: string | null;
+  unit_name?: string | null;
+  unit_id?: number | null;
+  selling_price?: number | string | null;
+  price?: number | string | null;
+  mrp?: number | string | null;
+  initial_stock?: number | string | null;
+  stock?: number | string | null;
+  status: number | string;
+  status_text?: string;
+  description?: string | null;
+  created_at?: string | null;
+  createdAt?: string | null;
+}
+
+export interface ProductListPagination {
+  current_page: number;
+  per_page: number;
+  total: number;
+  last_page: number;
+  from: number | null;
+  to: number | null;
+  has_more_pages: boolean;
+}
+
+export interface ProductListSummary {
+  total_products: number;
+  in_stock: number;
+  out_of_stock: number;
+  categories: number;
+}
+
+export interface ProductListResponse {
+  status: boolean;
+  message: string;
+  data: ProductListItem[];
+  pagination: ProductListPagination;
+  summary: ProductListSummary;
+}
+
+export interface ProductListParams {
+  search?: string;
+  page?: number;
+  per_page?: number;
+  status?: string | number;
+  filter?: string;
+}
+
+// ============================================================
 // CREATE PRODUCT API PAYLOAD & RESPONSE
 // ============================================================
 
