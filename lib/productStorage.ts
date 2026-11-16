@@ -1,37 +1,33 @@
-import { DEFAULT_PRODUCTS, type Product } from "@/types/product";
+import type { Product } from "@/types/product";
 
 export const PRODUCT_STORAGE_KEY = "greenvedha_products";
 
 export function getStoredProducts(): Product[] {
   if (typeof window === "undefined") {
-    return DEFAULT_PRODUCTS;
+    return [];
   }
 
   try {
     const raw = window.localStorage.getItem(PRODUCT_STORAGE_KEY);
     if (!raw) {
-      window.localStorage.setItem(
-        PRODUCT_STORAGE_KEY,
-        JSON.stringify(DEFAULT_PRODUCTS)
-      );
-      return DEFAULT_PRODUCTS;
+      return [];
     }
 
     const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed) && parsed.length > 0) {
+    if (Array.isArray(parsed)) {
       return parsed;
     }
 
-    return DEFAULT_PRODUCTS;
+    return [];
   } catch (err) {
     console.error("Failed to load products from localStorage:", err);
-    return DEFAULT_PRODUCTS;
+    return [];
   }
 }
 
 export function saveProduct(product: Product): Product[] {
   if (typeof window === "undefined") {
-    return [product, ...DEFAULT_PRODUCTS];
+    return [product];
   }
 
   try {
@@ -44,7 +40,7 @@ export function saveProduct(product: Product): Product[] {
     return updatedList;
   } catch (err) {
     console.error("Failed to save product:", err);
-    return DEFAULT_PRODUCTS;
+    return [];
   }
 }
 
@@ -52,7 +48,7 @@ export function updateProduct(
   id: string,
   updates: Partial<Product>
 ): Product[] {
-  if (typeof window === "undefined") return DEFAULT_PRODUCTS;
+  if (typeof window === "undefined") return [];
 
   try {
     const currentList = getStoredProducts();
@@ -66,12 +62,12 @@ export function updateProduct(
     return updatedList;
   } catch (err) {
     console.error("Failed to update product:", err);
-    return DEFAULT_PRODUCTS;
+    return [];
   }
 }
 
 export function deleteProduct(id: string): Product[] {
-  if (typeof window === "undefined") return DEFAULT_PRODUCTS;
+  if (typeof window === "undefined") return [];
 
   try {
     const currentList = getStoredProducts();
@@ -83,6 +79,6 @@ export function deleteProduct(id: string): Product[] {
     return updatedList;
   } catch (err) {
     console.error("Failed to delete product:", err);
-    return DEFAULT_PRODUCTS;
+    return [];
   }
 }

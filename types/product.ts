@@ -1,5 +1,70 @@
 export type ProductStatus = "Active" | "Out of Stock" | "Draft" | "Archived";
 
+// ============================================================
+// PRODUCT FILTERS (DROPDOWN OPTIONS)
+// ============================================================
+
+export interface ProductUnitOption {
+  id: number;
+  name: string;
+  unit_name?: string;
+  code?: string;
+  short_name?: string;
+}
+
+export interface ProductCategoryOption {
+  id: number;
+  name: string;
+  category_name?: string;
+  slug?: string;
+}
+
+export interface ProductStatusOption {
+  id: number;
+  name: string;
+  value: number;
+}
+
+export interface ProductFiltersData {
+  product_units: ProductUnitOption[];
+  product_categories: ProductCategoryOption[];
+  product_status: ProductStatusOption[];
+}
+
+export interface ProductFiltersResponse {
+  status: boolean;
+  message: string;
+  data: ProductFiltersData;
+}
+
+// ============================================================
+// CREATE PRODUCT API PAYLOAD & RESPONSE
+// ============================================================
+
+export interface CreateProductPayload {
+  name: string;
+  item_code: string;
+  category_id?: number | string | null;
+  unit_id?: number | string | null;
+  selling_price: number | string;
+  mrp?: number | string | null;
+  initial_stock?: number | string;
+  description?: string;
+  status: number | string; // 1 = Active, 2 = Draft, 3 = Out Of Stock
+}
+
+export interface CreateProductResponse {
+  status: boolean;
+  success?: boolean;
+  message: string;
+  data?: any;
+  errors?: Record<string, string[]>;
+}
+
+// ============================================================
+// LOCAL CRM PRODUCT MODEL
+// ============================================================
+
 export interface Product {
   id: string;
   name: string;
@@ -14,93 +79,8 @@ export interface Product {
   createdAt: string;
 }
 
-export const PRODUCT_CATEGORIES = [
-  "Herbal Wellness",
-  "Ayurvedic Medicines",
-  "Personal Care",
-  "Health Supplements",
-  "Immunity & Nutrition",
-  "Organic Products",
-  "Software & Services",
-  "Other",
-] as const;
+export const PRODUCT_CATEGORIES: readonly string[] = [];
 
-export const PRODUCT_UNITS = [
-  "Bottle",
-  "Box",
-  "Pack",
-  "Piece",
-  "Kg",
-  "Gram",
-  "Litre",
-  "Ml",
-  "Unit",
-] as const;
+export const PRODUCT_UNITS: readonly string[] = [];
 
-export const DEFAULT_PRODUCTS: Product[] = [
-  {
-    id: "prod-1",
-    name: "GreenVedha Herbal Hair Vitalizer",
-    sku: "GV-HHV-200",
-    category: "Personal Care",
-    price: 349,
-    mrp: 499,
-    stock: 120,
-    unit: "Bottle",
-    status: "Active",
-    description: "Natural herbal formula enriched with Bhringraj, Amla and Brahmi for strong hair roots.",
-    createdAt: "2026-10-15",
-  },
-  {
-    id: "prod-2",
-    name: "Ayurvedic Immunity Booster Kadha",
-    sku: "GV-IBK-100",
-    category: "Herbal Wellness",
-    price: 249,
-    mrp: 320,
-    stock: 85,
-    unit: "Pack",
-    status: "Active",
-    description: "Traditional 15-herb decoction blend for daily immune defense and respiratory health.",
-    createdAt: "2026-10-18",
-  },
-  {
-    id: "prod-3",
-    name: "Organic Pure Aloe Vera Gel",
-    sku: "GV-AVG-250",
-    category: "Personal Care",
-    price: 199,
-    mrp: 260,
-    stock: 45,
-    unit: "Bottle",
-    status: "Active",
-    description: "99% pure cold-pressed aloe vera gel for deep skin hydration and soothing care.",
-    createdAt: "2026-10-20",
-  },
-  {
-    id: "prod-4",
-    name: "Digestive Wellness Triphala Churna",
-    sku: "GV-DWT-150",
-    category: "Ayurvedic Medicines",
-    price: 180,
-    mrp: 220,
-    stock: 0,
-    unit: "Box",
-    status: "Out of Stock",
-    description: "Certified organic Triphala powder for healthy colon cleanse and natural digestion.",
-    createdAt: "2026-10-22",
-  },
-  {
-    id: "prod-5",
-    name: "GreenVedha CRM Annual Plan",
-    sku: "GV-CRM-ANNUAL",
-    category: "Software & Services",
-    price: 1499,
-    mrp: 1999,
-    stock: 999,
-    unit: "Unit",
-    status: "Active",
-    description: "All-in-one lead management, staff tracking, and follow-up CRM package for sales teams.",
-    createdAt: "2026-10-25",
-  },
-];
+export const DEFAULT_PRODUCTS: Product[] = [];

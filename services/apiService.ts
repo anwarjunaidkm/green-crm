@@ -1,6 +1,12 @@
 import api from "@/lib/axios";
 import type { LoginApiResponse, LogoutApiResponse, User } from "@/types/auth";
 import type {
+  CreateProductPayload,
+  CreateProductResponse,
+  ProductFiltersData,
+  ProductFiltersResponse,
+} from "@/types/product";
+import type {
   CreateEmployeePayload,
   CreateEmployeeResponse,
   DeleteEmployeeResponse,
@@ -58,6 +64,22 @@ export const deleteLead = async (id: string | number) => {
 // PRODUCTS API
 // ============================================================
 
+/**
+ * Fetch product filter options (product_units, product_categories, product_status)
+ * GET /product-filters
+ */
+export const getProductFilters = async (): Promise<ProductFiltersData> => {
+  const response = await api.get<ProductFiltersResponse>("/product-filters");
+  if (response.data?.status && response.data?.data) {
+    return response.data.data;
+  }
+  return {
+    product_units: [],
+    product_categories: [],
+    product_status: [],
+  };
+};
+
 export const getProducts = async () => {
   const response = await api.get("/products");
   return response.data;
@@ -68,8 +90,52 @@ export const getProductById = async (id: string | number) => {
   return response.data;
 };
 
-export const createProduct = async (productData: Record<string, unknown>) => {
-  const response = await api.post("/products", productData);
+/**
+ * Create a new product via backend API
+ * POST /create-product
+ */
+export const createProduct = async (
+  payload: CreateProductPayload,
+): Promise<CreateProductResponse> => {
+  const body: Record<string, unknown> = {
+    name: payload.name.trim(),
+    item_code: payload.item_code.trim(),
+    selling_price: Number(payload.selling_price),
+    status: Number(payload.status),
+  };
+
+  if (
+    payload.category_id !== undefined &&
+    payload.category_id !== "" &&
+    payload.category_id !== null
+  ) {
+    body.category_id = Number(payload.category_id);
+  }
+
+  if (
+    payload.unit_id !== undefined &&
+    payload.unit_id !== "" &&
+    payload.unit_id !== null
+  ) {
+    body.unit_id = Number(payload.unit_id);
+  }
+
+  if (payload.mrp !== undefined && payload.mrp !== "" && payload.mrp !== null) {
+    body.mrp = Number(payload.mrp);
+  }
+
+  if (payload.initial_stock !== undefined && payload.initial_stock !== "") {
+    body.initial_stock = Number(payload.initial_stock);
+  }
+
+  if (payload.description) {
+    body.description = payload.description.trim();
+  }
+
+  const response = await api.post<CreateProductResponse>(
+    "/create-product",
+    body,
+  );
   return response.data;
 };
 
