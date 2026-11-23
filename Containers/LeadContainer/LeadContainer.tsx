@@ -204,7 +204,7 @@ export default function LeadContainer() {
 
             <Link
               href="/leads/add"
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700 active:scale-[0.99]"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#176b32] px-4 text-xs font-semibold text-white shadow-sm transition hover:bg-[#125727] active:scale-[0.99]"
             >
               <Plus size={16} />
               Add Lead
@@ -479,7 +479,7 @@ export default function LeadContainer() {
               )}
               <Link
                 href="/leads/add"
-                className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-blue-700"
+                className="rounded-xl bg-[#176b32] px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-[#125727] transition"
               >
                 Add New Lead
               </Link>
