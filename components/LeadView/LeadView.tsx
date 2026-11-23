@@ -1,13 +1,13 @@
-﻿﻿"use client";
+"use client";
 
 import Link from "next/link";
-
 import {
   ArrowLeft,
   Building2,
   CalendarDays,
   Check,
   Clock3,
+  FileText,
   Mail,
   MapPin,
   MessageCircle,
@@ -23,9 +23,12 @@ import {
   LEAD_STATUS_STYLES,
   type LeadStatus,
 } from "@/config/leadConfig";
-
-import type { LeadTimelineItem } from "@/types/lead";
-
+import type {
+  LeadProgressStep,
+  LeadTimelineItem,
+  LeadUpdateHistoryItem,
+  ViewLeadData,
+} from "@/types/lead";
 import LeadTimeline from "@/components/LeadView/LeadTimeline";
 
 // ============================================================
@@ -34,81 +37,94 @@ import LeadTimeline from "@/components/LeadView/LeadTimeline";
 
 export interface LeadViewData {
   id: string;
-
   name: string;
-  avatar: string;
-
+  avatar?: string;
   phone: string;
   email: string;
-
   company: string;
   location: string;
-
   assignedTo: string;
   source: string;
-
-  status: LeadStatus;
-
+  status: LeadStatus | string;
   createdAt: string;
   createdTime: string;
-
   followUpDate: string;
   followUpTime: string;
-
   followUpNote: string;
-
   timeline: LeadTimelineItem[];
 }
 
 interface LeadViewProps {
-  lead: LeadViewData;
+  data?: ViewLeadData;
+  lead?: LeadViewData;
 }
 
-// ============================================================
-// STATUS FLOW
-// ============================================================
-
-const STATUS_FLOW: {
+// Fallback status flow when lead_progress from API is not available
+const FALLBACK_STATUS_FLOW: {
   value: LeadStatus;
   label: string;
 }[] = [
-  {
-    value: LEAD_STATUS.NEW_LEAD,
-    label: "New Lead",
-  },
-  {
-    value: LEAD_STATUS.CONTACTED,
-    label: "Contacted",
-  },
-  {
-    value: LEAD_STATUS.INTERESTED,
-    label: "Interested",
-  },
-  {
-    value: LEAD_STATUS.FOLLOW_UP,
-    label: "Follow-up",
-  },
-  {
-    value: LEAD_STATUS.PROPOSAL_SENT,
-    label: "Proposal",
-  },
-  {
-    value: LEAD_STATUS.CLOSED_WON,
-    label: "Won",
-  },
+  { value: LEAD_STATUS.NEW_LEAD, label: "New Lead" },
+  { value: LEAD_STATUS.CONTACTED, label: "Contacted" },
+  { value: LEAD_STATUS.INTERESTED, label: "Interested" },
+  { value: LEAD_STATUS.FOLLOW_UP, label: "Follow-up" },
+  { value: LEAD_STATUS.PROPOSAL_SENT, label: "Proposal" },
+  { value: LEAD_STATUS.CLOSED_WON, label: "Won" },
 ];
 
 // ============================================================
 // COMPONENT
 // ============================================================
 
-export default function LeadView({ lead }: LeadViewProps) {
+export default function LeadView({ data, lead }: LeadViewProps) {
+  // Normalize data whether it comes from the API (data) or legacy/storage (lead)
+  const basic = data?.basic_details;
+
+  const id = basic?.id ? String(basic.id) : lead?.id || "";
+  const leadCode = basic?.lead_code || (id ? `#${id}` : "");
+  const name = basic?.customer_name || basic?.name || lead?.name || "Lead Details";
+  const phone = basic?.phone || lead?.phone || "";
+  const email = basic?.email || lead?.email || "";
+  const company = basic?.company || lead?.company || "";
+  const location = basic?.location || lead?.location || "";
+  const assignedTo = basic?.assigned_to || lead?.assignedTo || "-";
+  const createdBy = basic?.created_by || "";
+  const source = basic?.lead_channel || basic?.source || lead?.source || "-";
+  const statusName = basic?.lead_status || (lead?.status as string) || "New";
+  const statusColor = basic?.lead_status_color || "#3B82F6";
+
+  const createdAtFormatted =
+    basic?.created_at_formatted ||
+    (lead?.createdAt
+      ? `${lead.createdAt}${lead.createdTime ? ` • ${lead.createdTime}` : ""}`
+      : basic?.created_at
+        ? new Date(basic.created_at).toLocaleDateString()
+        : "-");
+
+  const followUpDate =
+    basic?.next_follow_up_date_formatted ||
+    basic?.next_follow_up ||
+    basic?.next_follow_up_date ||
+    lead?.followUpDate ||
+    "";
+
+  const followUpTime =
+    basic?.next_follow_up_time_formatted ||
+    basic?.next_follow_up_time ||
+    lead?.followUpTime ||
+    "";
+
+  const followUpNote = basic?.remarks || lead?.followUpNote || "";
+
+  const leadProgress = data?.lead_progress ?? [];
+  const updateHistory: LeadUpdateHistoryItem[] = data?.update_history ?? [];
+  const timeline: LeadTimelineItem[] = lead?.timeline ?? [];
+
   return (
     <div className="min-h-full bg-[#f6f8fc] pb-8">
       {/* ======================================================
           HEADER
       ====================================================== */}
-
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex h-[60px] max-w-[1200px] items-center justify-between px-4 sm:px-6 lg:h-[68px]">
           <div className="flex min-w-0 items-center">
@@ -121,9 +137,16 @@ export default function LeadView({ lead }: LeadViewProps) {
             </Link>
 
             <div className="min-w-0">
-              <h1 className="truncate text-[15px] font-semibold text-[#0b1d48] lg:text-[17px]">
-                Lead Details
-              </h1>
+              <div className="flex items-center gap-2">
+                <h1 className="truncate text-[15px] font-semibold text-[#0b1d48] lg:text-[17px]">
+                  Lead Details
+                </h1>
+                {leadCode && (
+                  <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-mono font-medium text-slate-600">
+                    {leadCode}
+                  </span>
+                )}
+              </div>
 
               <p className="mt-0.5 hidden text-[9px] text-slate-400 sm:block">
                 View lead information, follow-ups and complete update history
@@ -133,7 +156,7 @@ export default function LeadView({ lead }: LeadViewProps) {
 
           <div className="flex items-center gap-2">
             <Link
-              href={`/lead-view/${lead.id}/edit`}
+              href={`/lead-view/${id}/edit`}
               className="flex h-9 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-[11px] font-medium text-slate-600 transition hover:bg-slate-50 hover:text-blue-600"
             >
               <Pencil size={14} />
@@ -154,43 +177,41 @@ export default function LeadView({ lead }: LeadViewProps) {
       {/* ======================================================
           CONTENT
       ====================================================== */}
-
       <main className="mx-auto max-w-[1200px] px-4 py-4 sm:px-6 lg:py-6">
         {/* ====================================================
             PROFILE CARD
         ==================================================== */}
-
         <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_2px_10px_rgba(15,23,42,0.025)]">
           <div className="p-4 sm:p-5 lg:p-6">
             <div className="flex items-start gap-3 lg:gap-4">
               {/* AVATAR */}
-
-              <LeadAvatar name={lead.name} avatar={lead.avatar} />
+              <LeadAvatar name={name} avatar={lead?.avatar} />
 
               {/* NAME / STATUS */}
-
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <h2 className="truncate text-[17px] font-semibold tracking-[-0.2px] text-[#0b1d48] lg:text-[20px]">
-                    {lead.name}
+                    {name}
                   </h2>
 
-                  <StatusBadge status={lead.status} />
+                  <StatusBadge status={statusName} color={statusColor} />
+
+                  {leadCode && (
+                    <span className="text-[11px] text-slate-400">
+                      • {leadCode}
+                    </span>
+                  )}
                 </div>
 
                 <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[9px] text-slate-500 lg:text-[10px]">
                   <span className="flex items-center gap-1">
                     <Building2 size={12} />
-                    {lead.source}
+                    {source}
                   </span>
 
                   <span className="hidden h-1 w-1 rounded-full bg-slate-300 sm:block" />
 
-                  <span>Added {lead.createdAt}</span>
-
-                  <span className="hidden h-1 w-1 rounded-full bg-slate-300 sm:block" />
-
-                  <span>{lead.createdTime}</span>
+                  <span>Added {createdAtFormatted}</span>
                 </div>
               </div>
             </div>
@@ -198,21 +219,28 @@ export default function LeadView({ lead }: LeadViewProps) {
             {/* ==================================================
                 QUICK ACTIONS
             ================================================== */}
-
             <div className="mt-5 grid grid-cols-4 gap-2 border-t border-slate-100 pt-4 sm:flex sm:gap-3">
               <QuickAction
                 icon={Phone}
                 label="Call"
-                href={`tel:${lead.phone}`}
+                href={phone ? `tel:${phone}` : undefined}
               />
 
               <QuickAction
                 icon={MessageSquare}
                 label="Message"
-                href={`sms:${lead.phone}`}
+                href={phone ? `sms:${phone}` : undefined}
               />
 
-              <QuickAction icon={MessageCircle} label="WhatsApp" />
+              <QuickAction
+                icon={MessageCircle}
+                label="WhatsApp"
+                href={
+                  phone
+                    ? `https://wa.me/${phone.replace(/\D/g, "")}`
+                    : undefined
+                }
+              />
 
               <QuickAction icon={MoreHorizontal} label="More" />
             </div>
@@ -221,40 +249,50 @@ export default function LeadView({ lead }: LeadViewProps) {
           {/* ==================================================
               STATUS PROGRESS
           ================================================== */}
-
           <div className="border-t border-slate-100 bg-[#fbfcfe] px-4 py-4 sm:px-5 lg:px-6">
             <p className="mb-3 text-[9px] font-medium uppercase tracking-[0.08em] text-slate-400">
               Lead Progress
             </p>
 
-            <StatusProgress currentStatus={lead.status} />
+            <DynamicStatusProgress
+              progress={leadProgress}
+              fallbackStatus={statusName}
+            />
           </div>
         </section>
 
         {/* ====================================================
             MOBILE VIEW
         ==================================================== */}
-
         <div className="mt-4 space-y-4 lg:hidden">
           {/* LEAD INFORMATION */}
-
-          <LeadInformation lead={lead} />
+          <LeadInformation
+            phone={phone}
+            email={email}
+            company={company}
+            location={location}
+            assignedTo={assignedTo}
+            source={source}
+            remarks={basic?.remarks}
+          />
 
           {/* NEXT FOLLOW-UP */}
+          <NextFollowUp
+            date={followUpDate}
+            time={followUpTime}
+            note={followUpNote}
+            followUpDay={basic?.follow_up_day}
+          />
 
-          <NextFollowUp lead={lead} />
+          {/* UPDATE HISTORY */}
+          <LeadTimeline
+            updateHistory={updateHistory}
+            timeline={timeline}
+          />
 
-          {/* UPDATE HISTORY - ALL STATUS & NOTE UPDATES */}
-
-          <LeadTimeline timeline={lead.timeline} />
-
-          {/* ==================================================
-              UPDATE STATUS
-              NORMAL BUTTON - NOT FIXED/STICKY/ABSOLUTE
-          ================================================== */}
-
+          {/* UPDATE STATUS BUTTON */}
           <Link
-            href={`/lead-view/${lead.id}/update-status`}
+            href={`/lead-view/${id}/update-status`}
             className="flex h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-[#0868f7] text-[13px] font-semibold text-white shadow-[0_4px_12px_rgba(8,104,247,0.18)] transition hover:bg-[#005de2] active:scale-[0.99]"
           >
             <Pencil size={16} />
@@ -265,31 +303,36 @@ export default function LeadView({ lead }: LeadViewProps) {
         {/* ====================================================
             DESKTOP VIEW
         ==================================================== */}
-
         <div className="mt-5 hidden grid-cols-[minmax(0,1fr)_380px] items-start gap-5 lg:grid">
-          {/* ==================================================
-              LEFT
-          ================================================== */}
-
+          {/* LEFT COLUMN */}
           <div className="space-y-5">
-            <LeadInformation lead={lead} />
+            <LeadInformation
+              phone={phone}
+              email={email}
+              company={company}
+              location={location}
+              assignedTo={assignedTo}
+              source={source}
+              remarks={basic?.remarks}
+            />
 
-            {/* HISTORY - DESKTOP ONLY */}
-
-            <LeadTimeline timeline={lead.timeline} />
+            {/* UPDATE HISTORY TIMELINE */}
+            <LeadTimeline
+              updateHistory={updateHistory}
+              timeline={timeline}
+            />
           </div>
 
-          {/* ==================================================
-              RIGHT
-          ================================================== */}
-
+          {/* RIGHT COLUMN */}
           <div className="sticky top-5 space-y-5">
-            <NextFollowUp lead={lead} />
+            <NextFollowUp
+              date={followUpDate}
+              time={followUpTime}
+              note={followUpNote}
+              followUpDay={basic?.follow_up_day}
+            />
 
-            {/* ==================================================
-                CURRENT STATUS
-            ================================================== */}
-
+            {/* CURRENT STATUS */}
             <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_2px_10px_rgba(15,23,42,0.025)]">
               <div className="flex items-center justify-between">
                 <div>
@@ -298,17 +341,27 @@ export default function LeadView({ lead }: LeadViewProps) {
                   </p>
 
                   <div className="mt-2">
-                    <StatusBadge status={lead.status} large />
+                    <StatusBadge
+                      status={statusName}
+                      color={statusColor}
+                      large
+                    />
                   </div>
                 </div>
 
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-blue-600">
-                  <Check size={17} />
+                <div
+                  className="flex h-10 w-10 items-center justify-center rounded-full"
+                  style={{
+                    backgroundColor: `${statusColor}18`,
+                    color: statusColor,
+                  }}
+                >
+                  <Check size={18} />
                 </div>
               </div>
 
               <Link
-                href={`/lead-view/${lead.id}/update-status`}
+                href={`/lead-view/${id}/update-status`}
                 className="mt-5 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#0868f7] text-[11px] font-semibold text-white shadow-[0_4px_12px_rgba(8,104,247,0.16)] transition hover:bg-[#005de2]"
               >
                 <Pencil size={14} />
@@ -316,26 +369,20 @@ export default function LeadView({ lead }: LeadViewProps) {
               </Link>
             </section>
 
-            {/* ==================================================
-                LEAD META
-            ================================================== */}
-
+            {/* LEAD META */}
             <section className="rounded-2xl border border-slate-200 bg-white p-5">
               <p className="text-[9px] font-medium uppercase tracking-[0.08em] text-slate-400">
                 Lead Information
               </p>
 
               <div className="mt-4 space-y-3">
-                <SmallMeta label="Lead ID" value={`#${lead.id}`} />
-
-                <SmallMeta
-                  label="Created"
-                  value={`${lead.createdAt} • ${lead.createdTime}`}
-                />
-
-                <SmallMeta label="Assigned To" value={lead.assignedTo} />
-
-                <SmallMeta label="Source" value={lead.source} />
+                <SmallMeta label="Lead Code" value={leadCode || "-"} />
+                <SmallMeta label="Created" value={createdAtFormatted} />
+                {createdBy && (
+                  <SmallMeta label="Created By" value={createdBy} />
+                )}
+                <SmallMeta label="Assigned To" value={assignedTo} />
+                <SmallMeta label="Source" value={source} />
               </div>
             </section>
           </div>
@@ -346,10 +393,26 @@ export default function LeadView({ lead }: LeadViewProps) {
 }
 
 // ============================================================
-// LEAD INFORMATION
+// LEAD INFORMATION CARD
 // ============================================================
 
-function LeadInformation({ lead }: { lead: LeadViewData }) {
+function LeadInformation({
+  phone,
+  email,
+  company,
+  location,
+  assignedTo,
+  source,
+  remarks,
+}: {
+  phone: string;
+  email: string;
+  company: string;
+  location: string;
+  assignedTo: string;
+  source: string;
+  remarks?: string;
+}) {
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_2px_10px_rgba(15,23,42,0.025)] sm:p-5">
       <div className="mb-4 flex items-center justify-between">
@@ -357,7 +420,6 @@ function LeadInformation({ lead }: { lead: LeadViewData }) {
           <h3 className="text-[12px] font-semibold text-[#0b1d48] lg:text-[13px]">
             Lead Information
           </h3>
-
           <p className="mt-1 hidden text-[9px] text-slate-400 sm:block">
             Contact and business information
           </p>
@@ -368,36 +430,48 @@ function LeadInformation({ lead }: { lead: LeadViewData }) {
         <InformationRow
           icon={Phone}
           label="Phone"
-          value={lead.phone}
-          href={`tel:${lead.phone}`}
+          value={phone || "-"}
+          href={phone ? `tel:${phone}` : undefined}
         />
 
         <InformationRow
           icon={Mail}
           label="Email"
-          value={lead.email}
-          href={`mailto:${lead.email}`}
+          value={email || "-"}
+          href={email ? `mailto:${email}` : undefined}
         />
 
         <InformationRow
           icon={Building2}
           label="Company"
-          value={lead.company || "-"}
+          value={company || "-"}
         />
 
         <InformationRow
           icon={MapPin}
           label="Location"
-          value={lead.location || "-"}
+          value={location || "-"}
         />
 
         <InformationRow
           icon={UserRound}
           label="Assigned To"
-          value={lead.assignedTo}
+          value={assignedTo || "-"}
         />
 
-        <InformationRow icon={Building2} label="Source" value={lead.source} />
+        <InformationRow
+          icon={Building2}
+          label="Source"
+          value={source || "-"}
+        />
+
+        {remarks && (
+          <InformationRow
+            icon={FileText}
+            label="Remarks"
+            value={remarks}
+          />
+        )}
       </div>
     </section>
   );
@@ -451,70 +525,79 @@ function InformationRow({
 // NEXT FOLLOW-UP
 // ============================================================
 
-function NextFollowUp({ lead }: { lead: LeadViewData }) {
+function NextFollowUp({
+  date,
+  time,
+  note,
+  followUpDay,
+}: {
+  date: string;
+  time: string;
+  note: string;
+  followUpDay?: number;
+}) {
   return (
     <section className="overflow-hidden rounded-2xl border border-blue-100 bg-white shadow-[0_2px_10px_rgba(15,23,42,0.025)]">
       <div className="border-b border-blue-100 bg-[#f6f9ff] px-4 py-3 sm:px-5">
-        <div className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
-            <CalendarDays size={14} />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
+              <CalendarDays size={14} />
+            </div>
+
+            <div>
+              <h3 className="text-[11px] font-semibold text-[#0b1d48]">
+                Next Follow-up
+              </h3>
+              <p className="mt-0.5 text-[8px] text-slate-400">
+                Scheduled follow-up
+              </p>
+            </div>
           </div>
 
-          <div>
-            <h3 className="text-[11px] font-semibold text-[#0b1d48]">
-              Next Follow-up
-            </h3>
-
-            <p className="mt-0.5 text-[8px] text-slate-400">
-              Scheduled follow-up
-            </p>
-          </div>
+          {followUpDay !== undefined && followUpDay !== null && (
+            <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-[9px] font-medium text-blue-700">
+              {followUpDay === 0 ? "Today" : `Day ${followUpDay}`}
+            </span>
+          )}
         </div>
       </div>
 
       <div className="p-4 sm:p-5">
         <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
           {/* DATE */}
-
           <div className="flex items-center gap-2">
             <CalendarDays size={14} className="text-blue-600" />
-
             <div>
               <p className="text-[8px] text-slate-400">Date</p>
-
               <p className="mt-0.5 text-[10px] font-semibold text-[#0b1d48]">
-                {formatFollowUpDate(lead.followUpDate)}
+                {formatFollowUpDate(date)}
               </p>
             </div>
           </div>
 
           {/* TIME */}
-
           <div className="flex items-center gap-2">
             <Clock3 size={14} className="text-blue-600" />
-
             <div>
               <p className="text-[8px] text-slate-400">Time</p>
-
               <p className="mt-0.5 text-[10px] font-semibold text-[#0b1d48]">
-                {formatFollowUpTime(lead.followUpTime)}
+                {formatFollowUpTime(time)}
               </p>
             </div>
           </div>
         </div>
 
         {/* NOTE */}
-
-        {lead.followUpNote && (
+        {note && (
           <div className="mt-4 rounded-xl bg-[#f8fafc] p-3">
             <div className="flex items-start gap-2">
               <MessageSquare
                 size={13}
                 className="mt-0.5 shrink-0 text-slate-400"
               />
-
               <p className="text-[9px] leading-[1.6] text-slate-600">
-                {lead.followUpNote}
+                {note}
               </p>
             </div>
           </div>
@@ -525,42 +608,117 @@ function NextFollowUp({ lead }: { lead: LeadViewData }) {
 }
 
 // ============================================================
-// STATUS PROGRESS
+// DYNAMIC STATUS PROGRESS
 // ============================================================
 
-function StatusProgress({ currentStatus }: { currentStatus: LeadStatus }) {
-  const currentIndex = STATUS_FLOW.findIndex(
-    (item) => item.value === currentStatus,
-  );
+function DynamicStatusProgress({
+  progress,
+  fallbackStatus,
+}: {
+  progress: LeadProgressStep[];
+  fallbackStatus: string;
+}) {
+  // If API returned progress steps, render them
+  if (progress && progress.length > 0) {
+    return (
+      <div className="overflow-x-auto pb-1">
+        <div className="flex min-w-[320px] items-start">
+          {progress.map((step, index) => {
+            const stepColor = step.color || "#3B82F6";
+            const completed = step.is_completed;
+            const active = step.is_current;
 
+            return (
+              <div
+                key={step.status_id || index}
+                className="relative flex flex-1 flex-col items-center"
+              >
+                {/* CONNECTING LINE */}
+                {index < progress.length - 1 && (
+                  <div
+                    className="absolute left-1/2 top-[11px] h-[2px] w-full"
+                    style={{
+                      backgroundColor:
+                        completed && progress[index + 1]?.is_completed
+                          ? stepColor
+                          : "#e2e8f0",
+                    }}
+                  />
+                )}
+
+                {/* CIRCLE */}
+                <div
+                  className="relative z-10 flex h-[23px] w-[23px] items-center justify-center rounded-full border-2 transition"
+                  style={{
+                    borderColor:
+                      completed || active ? stepColor : "#cbd5e1",
+                    backgroundColor: completed
+                      ? stepColor
+                      : "#ffffff",
+                    color: completed ? "#ffffff" : stepColor,
+                  }}
+                >
+                  {completed ? (
+                    <Check size={11} strokeWidth={3} />
+                  ) : (
+                    <span
+                      className="h-1.5 w-1.5 rounded-full"
+                      style={{
+                        backgroundColor: active ? stepColor : "#94a3b8",
+                      }}
+                    />
+                  )}
+                </div>
+
+                {/* LABEL */}
+                <p
+                  className="mt-2 whitespace-nowrap text-center text-[7px] font-medium sm:text-[8px]"
+                  style={{
+                    color: active || completed ? stepColor : "#94a3b8",
+                  }}
+                >
+                  {step.name}
+                </p>
+
+                {/* COMPLETED AT */}
+                {step.completed_at_formatted && (
+                  <p className="mt-0.5 text-center text-[6.5px] text-slate-400">
+                    {step.completed_at_formatted}
+                  </p>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  // Fallback to static flow if no progress array returned
+  const currentIndex = FALLBACK_STATUS_FLOW.findIndex(
+    (item) => item.label.toLowerCase() === fallbackStatus.toLowerCase(),
+  );
   const safeCurrentIndex = currentIndex >= 0 ? currentIndex : 0;
 
-  const isNotInterested = currentStatus === LEAD_STATUS.NOT_INTERESTED;
-
   return (
-    <div>
-      <div className="flex w-full items-start">
-        {STATUS_FLOW.map((item, index) => {
-          const completed = !isNotInterested && index < safeCurrentIndex;
-
-          const active = !isNotInterested && index === safeCurrentIndex;
+    <div className="overflow-x-auto pb-1">
+      <div className="flex min-w-[320px] items-start">
+        {FALLBACK_STATUS_FLOW.map((item, index) => {
+          const completed = index < safeCurrentIndex;
+          const active = index === safeCurrentIndex;
 
           return (
             <div
               key={item.value}
               className="relative flex flex-1 flex-col items-center"
             >
-              {/* CONNECTING LINE */}
-
-              {index < STATUS_FLOW.length - 1 && (
+              {index < FALLBACK_STATUS_FLOW.length - 1 && (
                 <div
                   className={`absolute left-1/2 top-[11px] h-[2px] w-full ${
                     index < safeCurrentIndex ? "bg-blue-600" : "bg-slate-200"
                   }`}
                 />
               )}
-
-              {/* CIRCLE */}
 
               <div
                 className={`relative z-10 flex h-[23px] w-[23px] items-center justify-center rounded-full border-2 transition ${
@@ -582,8 +740,6 @@ function StatusProgress({ currentStatus }: { currentStatus: LeadStatus }) {
                 )}
               </div>
 
-              {/* LABEL */}
-
               <p
                 className={`mt-2 whitespace-nowrap text-center text-[7px] font-medium sm:text-[8px] ${
                   active || completed ? "text-blue-600" : "text-slate-400"
@@ -595,16 +751,6 @@ function StatusProgress({ currentStatus }: { currentStatus: LeadStatus }) {
           );
         })}
       </div>
-
-      {/* NOT INTERESTED */}
-
-      {isNotInterested && (
-        <div className="mt-4 flex items-center justify-center">
-          <span className="rounded-full bg-red-50 px-3 py-1.5 text-[9px] font-semibold text-red-600">
-            Lead marked as Not Interested
-          </span>
-        </div>
-      )}
     </div>
   );
 }
@@ -636,7 +782,12 @@ function QuickAction({
 
   if (href) {
     return (
-      <a href={href} className="group flex min-w-[55px] flex-col items-center">
+      <a
+        href={href}
+        target={href.startsWith("http") ? "_blank" : undefined}
+        rel={href.startsWith("http") ? "noopener noreferrer" : undefined}
+        className="group flex min-w-[55px] flex-col items-center"
+      >
         {content}
       </a>
     );
@@ -656,10 +807,12 @@ function QuickAction({
 // AVATAR
 // ============================================================
 
-function LeadAvatar({ name, avatar }: { name: string; avatar: string }) {
+function LeadAvatar({ name, avatar }: { name: string; avatar?: string }) {
+  const initial = (avatar || name || "L").charAt(0).toUpperCase();
+
   return (
     <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#dce9ff] text-[19px] font-semibold text-[#0968f7] lg:h-16 lg:w-16 lg:text-[22px]">
-      {avatar || name.charAt(0).toUpperCase()}
+      {initial}
     </div>
   );
 }
@@ -670,16 +823,44 @@ function LeadAvatar({ name, avatar }: { name: string; avatar: string }) {
 
 function StatusBadge({
   status,
+  color,
   large = false,
 }: {
-  status: LeadStatus;
+  status: string;
+  color?: string;
   large?: boolean;
 }) {
+  const fallbackClass =
+    (LEAD_STATUS_STYLES as Record<string, string>)[status] ||
+    "bg-blue-50 text-blue-700 border-blue-200";
+
+  if (color) {
+    return (
+      <span
+        className={`inline-flex items-center whitespace-nowrap rounded-full font-medium ${
+          large ? "px-3 py-1.5 text-[10px]" : "px-2.5 py-1 text-[8px]"
+        }`}
+        style={{
+          backgroundColor: `${color}18`,
+          color: color,
+          borderColor: `${color}35`,
+          borderWidth: 1,
+        }}
+      >
+        <span
+          className="mr-1.5 h-1.5 w-1.5 rounded-full"
+          style={{ backgroundColor: color }}
+        />
+        {status}
+      </span>
+    );
+  }
+
   return (
     <span
-      className={`inline-flex whitespace-nowrap rounded-full font-medium ${
-        LEAD_STATUS_STYLES[status]
-      } ${large ? "px-3 py-1.5 text-[10px]" : "px-2.5 py-1 text-[8px]"}`}
+      className={`inline-flex whitespace-nowrap rounded-full font-medium ${fallbackClass} ${
+        large ? "px-3 py-1.5 text-[10px]" : "px-2.5 py-1 text-[8px]"
+      }`}
     >
       {status}
     </span>
@@ -700,7 +881,6 @@ function SmallMeta({
   return (
     <div className="flex items-center justify-between gap-4">
       <span className="text-[9px] text-slate-400">{label}</span>
-
       <span className="text-right text-[9px] font-medium text-[#0b1d48]">
         {value}
       </span>
@@ -713,9 +893,7 @@ function SmallMeta({
 // ============================================================
 
 function formatFollowUpDate(value: string) {
-  if (!value) {
-    return "-";
-  }
+  if (!value) return "-";
 
   const date = /^\d{4}-\d{2}-\d{2}$/.test(value)
     ? new Date(`${value}T00:00:00`)
@@ -736,16 +914,12 @@ function formatFollowUpDate(value: string) {
 // FORMAT FOLLOW-UP TIME
 // ============================================================
 
-function formatFollowUpTime(value: string) {
-  if (!value) {
-    return "-";
-  }
+function formatFollowUpTime(value: string | null | undefined) {
+  if (!value) return "-";
 
   if (/^\d{2}:\d{2}$/.test(value)) {
     const [hours, minutes] = value.split(":").map(Number);
-
     const date = new Date();
-
     date.setHours(hours, minutes, 0, 0);
 
     return new Intl.DateTimeFormat("en-US", {

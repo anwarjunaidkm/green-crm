@@ -6,6 +6,7 @@ import {
   getLeads,
   getLeadList,
   getLeadById,
+  viewLead,
   createLead,
   updateLead,
   updateLeadStatus,
@@ -16,6 +17,8 @@ import type {
   LeadFiltersData,
   LeadListParams,
   LeadListResponse,
+  UpdateLeadStatusPayload,
+  ViewLeadResponse,
 } from "@/types/lead";
 
 // ============================================================
@@ -28,6 +31,8 @@ export const leadKeys = {
   lists: () => [...leadKeys.all, "list"] as const,
   list: (params: LeadListParams) => [...leadKeys.lists(), params] as const,
   detail: (id: string | number) => [...leadKeys.all, id.toString()] as const,
+  view: (id: string | number) =>
+    [...leadKeys.all, "view", id.toString()] as const,
 };
 
 // ============================================================
@@ -70,6 +75,15 @@ export function useLead(id: string | number) {
   });
 }
 
+// 3.1 Get full view lead details (basic_details, lead_progress, update_history, follow_up_history)
+export function useViewLead(id: string | number) {
+  return useQuery<ViewLeadResponse>({
+    queryKey: leadKeys.view(id),
+    queryFn: () => viewLead(id),
+    enabled: !!id,
+  });
+}
+
 // 4. Create lead
 export function useCreateLead() {
   const queryClient = useQueryClient();
@@ -105,15 +119,14 @@ export function useUpdateLeadStatus() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
-      id,
-      data,
-    }: {
-      id: string | number;
-      data: Record<string, unknown>;
-    }) => updateLeadStatus(id, data),
-    onSuccess: () => {
+    mutationFn: (payload: UpdateLeadStatusPayload) => updateLeadStatus(payload),
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: leadKeys.all });
+      if (variables?.id) {
+        queryClient.invalidateQueries({
+          queryKey: leadKeys.view(variables.id),
+        });
+      }
     },
   });
 }

@@ -7,6 +7,9 @@ import type {
   LeadFiltersResponse,
   LeadListParams,
   LeadListResponse,
+  UpdateLeadStatusPayload,
+  UpdateLeadStatusResponse,
+  ViewLeadResponse,
 } from "@/types/lead";
 import type {
   CreateProductPayload,
@@ -122,6 +125,17 @@ export const getLeadById = async (id: string | number) => {
 };
 
 /**
+ * Fetch lead details by ID
+ * GET /view-lead?id=:id
+ */
+export const viewLead = async (
+  id: string | number,
+): Promise<ViewLeadResponse> => {
+  const response = await api.get<ViewLeadResponse>(`/view-lead?id=${id}`);
+  return response.data;
+};
+
+/**
  * Create a new lead via backend API
  * POST /create-lead
  */
@@ -185,11 +199,32 @@ export const updateLead = async (
   return response.data;
 };
 
+/**
+ * Update lead status via backend API
+ * POST /update-lead-status
+ */
 export const updateLeadStatus = async (
-  id: string | number,
-  statusData: Record<string, unknown>,
-) => {
-  const response = await api.patch(`/leads/${id}/status`, statusData);
+  payload: UpdateLeadStatusPayload,
+): Promise<UpdateLeadStatusResponse> => {
+  const body: Record<string, unknown> = {
+    id: Number(payload.id),
+    lead_status_id: Number(payload.lead_status_id),
+  };
+
+  if (payload.next_follow_up_date) {
+    body.next_follow_up_date = payload.next_follow_up_date;
+  }
+  if (payload.next_follow_up_time) {
+    body.next_follow_up_time = payload.next_follow_up_time;
+  }
+  if (payload.remarks !== undefined && payload.remarks !== null) {
+    body.remarks = payload.remarks.trim();
+  }
+
+  const response = await api.post<UpdateLeadStatusResponse>(
+    "/update-lead-status",
+    body,
+  );
   return response.data;
 };
 

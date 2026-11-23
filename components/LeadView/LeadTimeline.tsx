@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import {
   CalendarDays,
@@ -11,22 +11,33 @@ import {
   UserRound,
 } from "lucide-react";
 
-import type { LeadHistoryType, LeadTimelineItem } from "@/types/lead";
+import type {
+  LeadHistoryType,
+  LeadTimelineItem,
+  LeadUpdateHistoryItem,
+} from "@/types/lead";
 
 // ============================================================
 // TYPES
 // ============================================================
 
 interface LeadTimelineProps {
-  timeline: LeadTimelineItem[];
+  timeline?: LeadTimelineItem[];
+  updateHistory?: LeadUpdateHistoryItem[];
 }
 
 // ============================================================
 // COMPONENT
 // ============================================================
 
-export default function LeadTimeline({ timeline }: LeadTimelineProps) {
-  if (!timeline.length) {
+export default function LeadTimeline({
+  timeline,
+  updateHistory,
+}: LeadTimelineProps) {
+  const hasUpdateHistory = updateHistory && updateHistory.length > 0;
+  const hasTimeline = timeline && timeline.length > 0;
+
+  if (!hasUpdateHistory && !hasTimeline) {
     return (
       <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center">
         <p className="text-[11px] text-slate-400">No update history yet.</p>
@@ -47,20 +58,118 @@ export default function LeadTimeline({ timeline }: LeadTimelineProps) {
       </div>
 
       <div>
-        {timeline.map((item, index) => (
-          <TimelineItem
-            key={item.id}
-            item={item}
-            last={index === timeline.length - 1}
-          />
-        ))}
+        {hasUpdateHistory
+          ? updateHistory.map((item, index) => (
+              <UpdateHistoryItem
+                key={item.id}
+                item={item}
+                last={index === updateHistory.length - 1}
+              />
+            ))
+          : (timeline ?? []).map((item, index) => (
+              <TimelineItem
+                key={item.id}
+                item={item}
+                last={index === (timeline?.length ?? 1) - 1}
+              />
+            ))}
       </div>
     </section>
   );
 }
 
 // ============================================================
-// TIMELINE ITEM
+// API UPDATE HISTORY ITEM
+// ============================================================
+
+function UpdateHistoryItem({
+  item,
+  last,
+}: {
+  item: LeadUpdateHistoryItem;
+  last: boolean;
+}) {
+  const isCreated = item.title?.toLowerCase().includes("created");
+  const Icon = isCreated ? FilePlus2 : Check;
+  const statusColor = item.status_color || "#3B82F6";
+
+  return (
+    <div className="relative flex gap-3">
+      {/* LINE */}
+      {!last && (
+        <div className="absolute bottom-0 left-[16px] top-[32px] w-px bg-slate-200" />
+      )}
+
+      {/* ICON */}
+      <div
+        className="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
+        style={{
+          backgroundColor: `${statusColor}18`,
+          color: statusColor,
+        }}
+      >
+        <Icon size={14} />
+      </div>
+
+      {/* CONTENT */}
+      <div className={`min-w-0 flex-1 ${!last ? "pb-6" : "pb-1"}`}>
+        {/* HEADER */}
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-[10px] font-semibold text-[#0b1d48] sm:text-[11px]">
+                {item.title}
+              </p>
+              {item.status_name && (
+                <span
+                  className="rounded-full px-2 py-0.5 text-[8px] font-medium"
+                  style={{
+                    backgroundColor: `${statusColor}15`,
+                    color: statusColor,
+                    borderColor: `${statusColor}30`,
+                    borderWidth: 1,
+                  }}
+                >
+                  {item.status_name}
+                </span>
+              )}
+            </div>
+
+            {item.updated_by && (
+              <p className="mt-0.5 text-[8px] text-slate-400">
+                by {item.updated_by}
+              </p>
+            )}
+          </div>
+
+          <div className="shrink-0 text-right">
+            <p className="text-[8px] font-medium text-slate-500">
+              {item.updated_date || formatDate(item.created_at || "")}
+            </p>
+          </div>
+        </div>
+
+        {/* REMARKS */}
+        {item.remarks && (
+          <div className="mt-2.5 rounded-lg border border-slate-100 bg-[#f8fafc] p-3">
+            <div className="flex items-start gap-2">
+              <MessageSquare
+                size={12}
+                className="mt-0.5 shrink-0 text-slate-400"
+              />
+              <p className="text-[9px] leading-[1.6] text-slate-600">
+                {item.remarks}
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// TIMELINE ITEM (FALLBACK / MOCK)
 // ============================================================
 
 function TimelineItem({
@@ -70,20 +179,17 @@ function TimelineItem({
   item: LeadTimelineItem;
   last: boolean;
 }) {
-  const config = getTimelineConfig(item.type);
-
+  const config = getTimelineConfig(item.type || "lead_created");
   const Icon = config.icon;
 
   return (
     <div className="relative flex gap-3">
       {/* LINE */}
-
       {!last && (
         <div className="absolute bottom-0 left-[16px] top-[32px] w-px bg-slate-200" />
       )}
 
       {/* ICON */}
-
       <div
         className={`relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${config.iconClass}`}
       >
@@ -91,16 +197,13 @@ function TimelineItem({
       </div>
 
       {/* CONTENT */}
-
       <div className={`min-w-0 flex-1 ${!last ? "pb-6" : "pb-1"}`}>
         {/* HEADER */}
-
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-[10px] font-semibold text-[#0b1d48] sm:text-[11px]">
               {item.title}
             </p>
-
             <p className="mt-0.5 text-[8px] text-slate-400">
               by {item.updatedBy}
             </p>
@@ -110,7 +213,6 @@ function TimelineItem({
             <p className="text-[8px] font-medium text-slate-500">
               {formatDate(item.createdAt)}
             </p>
-
             <p className="mt-0.5 text-[8px] text-slate-400">
               {formatTime(item.createdAt)}
             </p>
@@ -118,25 +220,12 @@ function TimelineItem({
         </div>
 
         {/* OLD -> NEW */}
-
         {item.oldValue && item.newValue && (
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <span className="rounded-md bg-slate-100 px-2 py-1 text-[8px] font-medium text-slate-500">
               {item.oldValue}
             </span>
-
             <ChevronRight size={12} className="text-slate-300" />
-
-            <span className="rounded-md bg-blue-50 px-2 py-1 text-[8px] font-semibold text-blue-600">
-              {item.newValue}
-            </span>
-          </div>
-        )}
-
-        {/* CREATED */}
-
-        {!item.oldValue && item.newValue && (
-          <div className="mt-2">
             <span className="rounded-md bg-blue-50 px-2 py-1 text-[8px] font-semibold text-blue-600">
               {item.newValue}
             </span>
@@ -144,7 +233,6 @@ function TimelineItem({
         )}
 
         {/* NOTE */}
-
         {item.note && (
           <div className="mt-2.5 rounded-lg bg-[#f8fafc] p-3">
             <div className="flex items-start gap-2">
@@ -152,7 +240,6 @@ function TimelineItem({
                 size={12}
                 className="mt-0.5 shrink-0 text-slate-400"
               />
-
               <p className="text-[9px] leading-[1.6] text-slate-600">
                 {item.note}
               </p>
@@ -161,21 +248,17 @@ function TimelineItem({
         )}
 
         {/* FOLLOW UP */}
-
         {(item.followUpDate || item.followUpTime) && (
           <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[8px] text-slate-500">
             {item.followUpDate && (
               <div className="flex items-center gap-1">
                 <CalendarDays size={11} className="text-blue-500" />
-
                 <span>Next follow-up: {item.followUpDate}</span>
               </div>
             )}
-
             {item.followUpTime && (
               <div className="flex items-center gap-1">
                 <Clock3 size={11} className="text-blue-500" />
-
                 <span>{item.followUpTime}</span>
               </div>
             )}
@@ -197,43 +280,36 @@ function getTimelineConfig(type: LeadHistoryType) {
         icon: FilePlus2,
         iconClass: "bg-blue-100 text-blue-600",
       };
-
     case "status_updated":
       return {
         icon: Check,
         iconClass: "bg-emerald-100 text-emerald-600",
       };
-
     case "follow_up_updated":
       return {
         icon: CalendarDays,
         iconClass: "bg-violet-100 text-violet-600",
       };
-
     case "note_added":
       return {
         icon: MessageSquare,
         iconClass: "bg-amber-100 text-amber-600",
       };
-
     case "assigned_changed":
       return {
         icon: UserRound,
         iconClass: "bg-cyan-100 text-cyan-600",
       };
-
     case "call_logged":
       return {
         icon: Phone,
         iconClass: "bg-green-100 text-green-600",
       };
-
     case "message_sent":
       return {
         icon: MessageSquare,
         iconClass: "bg-purple-100 text-purple-600",
       };
-
     default:
       return {
         icon: Check,
