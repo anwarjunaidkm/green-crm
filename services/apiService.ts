@@ -1,6 +1,17 @@
 import api from "@/lib/axios";
 import type { LoginApiResponse, LogoutApiResponse, User } from "@/types/auth";
 import type {
+  CreateLeadPayload,
+  CreateLeadResponse,
+  LeadFiltersData,
+  LeadFiltersResponse,
+  LeadListParams,
+  LeadListResponse,
+  UpdateLeadStatusPayload,
+  UpdateLeadStatusResponse,
+  ViewLeadResponse,
+} from "@/types/lead";
+import type {
   CreateProductPayload,
   CreateProductResponse,
   ProductFiltersData,
@@ -26,8 +37,85 @@ import type {
 // LEADS API
 // ============================================================
 
+/**
+ * Fetch lead filter options (lead_statuses, lead_channels, products)
+ * GET /lead-filters
+ */
+export const getLeadFilters = async (): Promise<LeadFiltersData> => {
+  const response = await api.get<LeadFiltersResponse>("/lead-filters");
+  if (response.data?.status && response.data?.data) {
+    return response.data.data;
+  }
+  return {
+    lead_statuses: [],
+    lead_channels: [],
+    products: [],
+  };
+};
+
 export const getLeads = async () => {
   const response = await api.get("/leads");
+  return response.data;
+};
+
+/**
+ * Fetch lead list with pagination, search, status filter, and summary
+ * GET /lead-list?search=&lead_status_id=&lead_channel_id=&product_id=&follow_up_day=&is_starred=&page=1&per_page=15
+ */
+export const getLeadList = async (
+  params?: LeadListParams,
+): Promise<LeadListResponse> => {
+  const queryParams = new URLSearchParams();
+
+  if (params?.page) {
+    queryParams.set("page", String(params.page));
+  }
+  if (params?.per_page) {
+    queryParams.set("per_page", String(params.per_page));
+  }
+  if (params?.search !== undefined && params?.search !== null) {
+    queryParams.set("search", params.search.trim());
+  }
+  if (
+    params?.lead_status_id !== undefined &&
+    params?.lead_status_id !== null &&
+    params?.lead_status_id !== ""
+  ) {
+    queryParams.set("lead_status_id", String(params.lead_status_id));
+  }
+  if (
+    params?.lead_channel_id !== undefined &&
+    params?.lead_channel_id !== null &&
+    params?.lead_channel_id !== ""
+  ) {
+    queryParams.set("lead_channel_id", String(params.lead_channel_id));
+  }
+  if (
+    params?.product_id !== undefined &&
+    params?.product_id !== null &&
+    params?.product_id !== ""
+  ) {
+    queryParams.set("product_id", String(params.product_id));
+  }
+  if (
+    params?.follow_up_day !== undefined &&
+    params?.follow_up_day !== null &&
+    params?.follow_up_day !== ""
+  ) {
+    queryParams.set("follow_up_day", String(params.follow_up_day));
+  }
+  if (
+    params?.is_starred !== undefined &&
+    params?.is_starred !== null &&
+    params?.is_starred !== ""
+  ) {
+    queryParams.set("is_starred", String(params.is_starred));
+  }
+
+  const qs = queryParams.toString();
+  const url = qs ? `/lead-list?${qs}` : "/lead-list";
+
+  const response = await api.get<LeadListResponse>(url);
   return response.data;
 };
 
@@ -36,8 +124,70 @@ export const getLeadById = async (id: string | number) => {
   return response.data;
 };
 
-export const createLead = async (leadData: Record<string, unknown>) => {
-  const response = await api.post("/leads", leadData);
+/**
+ * Fetch lead details by ID
+ * GET /view-lead?id=:id
+ */
+export const viewLead = async (
+  id: string | number,
+): Promise<ViewLeadResponse> => {
+  const response = await api.get<ViewLeadResponse>(`/view-lead?id=${id}`);
+  return response.data;
+};
+
+/**
+ * Create a new lead via backend API
+ * POST /create-lead
+ */
+export const createLead = async (
+  payload: CreateLeadPayload,
+): Promise<CreateLeadResponse> => {
+  const body: Record<string, unknown> = {
+    customer_name: payload.customer_name.trim(),
+    phone: payload.phone.trim(),
+  };
+
+  if (
+    payload.lead_channel_id !== undefined &&
+    payload.lead_channel_id !== null &&
+    payload.lead_channel_id !== ""
+  ) {
+    body.lead_channel_id = Number(payload.lead_channel_id);
+  }
+
+  if (
+    payload.lead_status_id !== undefined &&
+    payload.lead_status_id !== null &&
+    payload.lead_status_id !== ""
+  ) {
+    body.lead_status_id = Number(payload.lead_status_id);
+  }
+
+  if (
+    payload.product_id !== undefined &&
+    payload.product_id !== null &&
+    payload.product_id !== ""
+  ) {
+    body.product_id = Number(payload.product_id);
+  }
+
+  if (payload.remarks && payload.remarks.trim()) {
+    body.remarks = payload.remarks.trim();
+  }
+
+  if (payload.email && payload.email.trim()) {
+    body.email = payload.email.trim().toLowerCase();
+  }
+
+  if (payload.company && payload.company.trim()) {
+    body.company = payload.company.trim();
+  }
+
+  if (payload.location && payload.location.trim()) {
+    body.location = payload.location.trim();
+  }
+
+  const response = await api.post<CreateLeadResponse>("/create-lead", body);
   return response.data;
 };
 
@@ -49,11 +199,32 @@ export const updateLead = async (
   return response.data;
 };
 
+/**
+ * Update lead status via backend API
+ * POST /update-lead-status
+ */
 export const updateLeadStatus = async (
-  id: string | number,
-  statusData: Record<string, unknown>,
-) => {
-  const response = await api.patch(`/leads/${id}/status`, statusData);
+  payload: UpdateLeadStatusPayload,
+): Promise<UpdateLeadStatusResponse> => {
+  const body: Record<string, unknown> = {
+    id: Number(payload.id),
+    lead_status_id: Number(payload.lead_status_id),
+  };
+
+  if (payload.next_follow_up_date) {
+    body.next_follow_up_date = payload.next_follow_up_date;
+  }
+  if (payload.next_follow_up_time) {
+    body.next_follow_up_time = payload.next_follow_up_time;
+  }
+  if (payload.remarks !== undefined && payload.remarks !== null) {
+    body.remarks = payload.remarks.trim();
+  }
+
+  const response = await api.post<UpdateLeadStatusResponse>(
+    "/update-lead-status",
+    body,
+  );
   return response.data;
 };
 
