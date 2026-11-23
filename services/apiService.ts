@@ -1,6 +1,12 @@
 import api from "@/lib/axios";
 import type { LoginApiResponse, LogoutApiResponse, User } from "@/types/auth";
 import type {
+  CreateLeadPayload,
+  CreateLeadResponse,
+  LeadFiltersData,
+  LeadFiltersResponse,
+} from "@/types/lead";
+import type {
   CreateProductPayload,
   CreateProductResponse,
   ProductFiltersData,
@@ -26,6 +32,22 @@ import type {
 // LEADS API
 // ============================================================
 
+/**
+ * Fetch lead filter options (lead_statuses, lead_channels, products)
+ * GET /lead-filters
+ */
+export const getLeadFilters = async (): Promise<LeadFiltersData> => {
+  const response = await api.get<LeadFiltersResponse>("/lead-filters");
+  if (response.data?.status && response.data?.data) {
+    return response.data.data;
+  }
+  return {
+    lead_statuses: [],
+    lead_channels: [],
+    products: [],
+  };
+};
+
 export const getLeads = async () => {
   const response = await api.get("/leads");
   return response.data;
@@ -36,8 +58,59 @@ export const getLeadById = async (id: string | number) => {
   return response.data;
 };
 
-export const createLead = async (leadData: Record<string, unknown>) => {
-  const response = await api.post("/leads", leadData);
+/**
+ * Create a new lead via backend API
+ * POST /create-lead
+ */
+export const createLead = async (
+  payload: CreateLeadPayload,
+): Promise<CreateLeadResponse> => {
+  const body: Record<string, unknown> = {
+    customer_name: payload.customer_name.trim(),
+    phone: payload.phone.trim(),
+  };
+
+  if (
+    payload.lead_channel_id !== undefined &&
+    payload.lead_channel_id !== null &&
+    payload.lead_channel_id !== ""
+  ) {
+    body.lead_channel_id = Number(payload.lead_channel_id);
+  }
+
+  if (
+    payload.lead_status_id !== undefined &&
+    payload.lead_status_id !== null &&
+    payload.lead_status_id !== ""
+  ) {
+    body.lead_status_id = Number(payload.lead_status_id);
+  }
+
+  if (
+    payload.product_id !== undefined &&
+    payload.product_id !== null &&
+    payload.product_id !== ""
+  ) {
+    body.product_id = Number(payload.product_id);
+  }
+
+  if (payload.remarks && payload.remarks.trim()) {
+    body.remarks = payload.remarks.trim();
+  }
+
+  if (payload.email && payload.email.trim()) {
+    body.email = payload.email.trim().toLowerCase();
+  }
+
+  if (payload.company && payload.company.trim()) {
+    body.company = payload.company.trim();
+  }
+
+  if (payload.location && payload.location.trim()) {
+    body.location = payload.location.trim();
+  }
+
+  const response = await api.post<CreateLeadResponse>("/create-lead", body);
   return response.data;
 };
 
