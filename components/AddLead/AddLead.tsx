@@ -698,7 +698,7 @@ export default function AddLead() {
               <button
                 type="submit"
                 disabled={isSaving || isSuccess}
-                className="hidden h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-[#0868f7] text-[13px] font-semibold text-white shadow-[0_4px_12px_rgba(8,104,247,0.18)] transition hover:bg-[#005de2] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 lg:flex"
+                className="hidden h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-[#176b32] text-[13px] font-semibold text-white shadow-[0_4px_12px_rgba(23,107,50,0.18)] transition hover:bg-[#125727] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 lg:flex"
               >
                 {isSaving ? (
                   <>
@@ -722,7 +722,7 @@ export default function AddLead() {
             <button
               type="submit"
               disabled={isSaving || isSuccess}
-              className="flex h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-[#0868f7] text-[13px] font-semibold text-white shadow-[0_4px_12px_rgba(8,104,247,0.18)] transition active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-[#176b32] text-[13px] font-semibold text-white shadow-[0_4px_12px_rgba(23,107,50,0.18)] transition hover:bg-[#125727] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isSaving ? (
                 <>
