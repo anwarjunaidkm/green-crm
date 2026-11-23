@@ -63,6 +63,69 @@ export interface CreateLeadResponse {
 }
 
 // ============================================================
+// LEAD LIST API (LIST, PAGINATION, SUMMARY)
+// ============================================================
+
+export interface LeadListItem {
+  id: number;
+  lead_code: string;
+  name: string;
+  phone: string;
+  status: string;
+  status_color?: string;
+  source: string;
+  product?: string | { id?: number; name?: string; item_code?: string; selling_price?: string | number } | null;
+  follow_up_day?: number;
+  next_follow_up?: string;
+  assigned_to?: string;
+  remarks?: string;
+  created_at?: string;
+  is_starred?: boolean | number;
+}
+
+export interface LeadPagination {
+  current_page: number;
+  per_page: number;
+  total: number;
+  last_page: number;
+  from: number | null;
+  to: number | null;
+  has_more_pages: boolean;
+}
+
+export interface LeadStatusCard {
+  status_id: number;
+  name: string;
+  slug: string;
+  color: string;
+  count: number;
+}
+
+export interface LeadSummary {
+  total_leads: number;
+  status_cards: LeadStatusCard[];
+}
+
+export interface LeadListResponse {
+  status: boolean;
+  message: string;
+  data: LeadListItem[];
+  pagination: LeadPagination;
+  summary: LeadSummary;
+}
+
+export interface LeadListParams {
+  page?: number;
+  per_page?: number;
+  search?: string;
+  lead_status_id?: number | string;
+  lead_channel_id?: number | string;
+  product_id?: number | string;
+  follow_up_day?: number | string;
+  is_starred?: number | boolean | string;
+}
+
+// ============================================================
 // TIMELINE & HISTORY
 // ============================================================
 

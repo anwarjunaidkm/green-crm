@@ -5,6 +5,8 @@ import type {
   CreateLeadResponse,
   LeadFiltersData,
   LeadFiltersResponse,
+  LeadListParams,
+  LeadListResponse,
 } from "@/types/lead";
 import type {
   CreateProductPayload,
@@ -50,6 +52,67 @@ export const getLeadFilters = async (): Promise<LeadFiltersData> => {
 
 export const getLeads = async () => {
   const response = await api.get("/leads");
+  return response.data;
+};
+
+/**
+ * Fetch lead list with pagination, search, status filter, and summary
+ * GET /lead-list?search=&lead_status_id=&lead_channel_id=&product_id=&follow_up_day=&is_starred=&page=1&per_page=15
+ */
+export const getLeadList = async (
+  params?: LeadListParams,
+): Promise<LeadListResponse> => {
+  const queryParams = new URLSearchParams();
+
+  if (params?.page) {
+    queryParams.set("page", String(params.page));
+  }
+  if (params?.per_page) {
+    queryParams.set("per_page", String(params.per_page));
+  }
+  if (params?.search !== undefined && params?.search !== null) {
+    queryParams.set("search", params.search.trim());
+  }
+  if (
+    params?.lead_status_id !== undefined &&
+    params?.lead_status_id !== null &&
+    params?.lead_status_id !== ""
+  ) {
+    queryParams.set("lead_status_id", String(params.lead_status_id));
+  }
+  if (
+    params?.lead_channel_id !== undefined &&
+    params?.lead_channel_id !== null &&
+    params?.lead_channel_id !== ""
+  ) {
+    queryParams.set("lead_channel_id", String(params.lead_channel_id));
+  }
+  if (
+    params?.product_id !== undefined &&
+    params?.product_id !== null &&
+    params?.product_id !== ""
+  ) {
+    queryParams.set("product_id", String(params.product_id));
+  }
+  if (
+    params?.follow_up_day !== undefined &&
+    params?.follow_up_day !== null &&
+    params?.follow_up_day !== ""
+  ) {
+    queryParams.set("follow_up_day", String(params.follow_up_day));
+  }
+  if (
+    params?.is_starred !== undefined &&
+    params?.is_starred !== null &&
+    params?.is_starred !== ""
+  ) {
+    queryParams.set("is_starred", String(params.is_starred));
+  }
+
+  const qs = queryParams.toString();
+  const url = qs ? `/lead-list?${qs}` : "/lead-list";
+
+  const response = await api.get<LeadListResponse>(url);
   return response.data;
 };
 

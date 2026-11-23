@@ -230,7 +230,7 @@ export default function AddLead() {
     filters.lead_channels.find(
       (c) => String(c.id) === String(form.lead_channel_id),
     )?.title ||
-    "Channel";
+    "";
 
   const selectedStatusName =
     filters.lead_statuses.find(
@@ -242,7 +242,7 @@ export default function AddLead() {
     filters.lead_statuses.find(
       (s) => String(s.id) === String(form.lead_status_id),
     )?.title ||
-    "Status";
+    "";
 
   const selectedProduct = filters.products.find(
     (p) => String(p.id) === String(form.product_id),
@@ -332,7 +332,7 @@ export default function AddLead() {
                     name="customer_name"
                     value={form.customer_name}
                     onChange={handleChange}
-                    placeholder="e.g. Ahmed Ali"
+                    placeholder="Enter customer name"
                     required
                     error={errors.customer_name}
                   />
@@ -343,7 +343,7 @@ export default function AddLead() {
                     name="phone"
                     value={form.phone}
                     onChange={handleChange}
-                    placeholder="e.g. +971501234567"
+                    placeholder="Enter phone number"
                     required
                     error={errors.phone}
                   />
@@ -355,7 +355,7 @@ export default function AddLead() {
                     type="email"
                     value={form.email}
                     onChange={handleChange}
-                    placeholder="e.g. ahmed@example.com"
+                    placeholder="Enter email address"
                     error={errors.email}
                   />
                 </div>
@@ -375,7 +375,7 @@ export default function AddLead() {
                     name="company"
                     value={form.company}
                     onChange={handleChange}
-                    placeholder="e.g. Equal Infotech"
+                    placeholder="Enter company name"
                   />
 
                   <Field
@@ -384,7 +384,7 @@ export default function AddLead() {
                     name="location"
                     value={form.location}
                     onChange={handleChange}
-                    placeholder="e.g. Dubai, UAE"
+                    placeholder="Enter location"
                   />
                 </div>
               </div>
@@ -475,7 +475,7 @@ export default function AddLead() {
                       rows={3}
                       value={form.remarks}
                       onChange={handleChange}
-                      placeholder="e.g. Inquiry received from Website Form"
+                      placeholder="Enter remarks or requirements"
                       className="w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3 pt-2.5 text-[11px] font-medium text-[#0b1d48] outline-none transition placeholder:font-normal placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                     />
                   </div>
@@ -637,10 +637,10 @@ export default function AddLead() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-[#0b1d48]">
-                      {form.customer_name.trim() || "New Lead"}
+                      {form.customer_name.trim() || "-"}
                     </p>
                     <p className="truncate text-[11px] text-slate-500">
-                      {form.phone.trim() || "No phone added"}
+                      {form.phone.trim() || "-"}
                     </p>
 
                     <div className="mt-2 flex flex-wrap items-center gap-1.5">

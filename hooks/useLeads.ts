@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getLeadFilters,
   getLeads,
+  getLeadList,
   getLeadById,
   createLead,
   updateLead,
@@ -13,6 +14,8 @@ import {
 import type {
   CreateLeadPayload,
   LeadFiltersData,
+  LeadListParams,
+  LeadListResponse,
 } from "@/types/lead";
 
 // ============================================================
@@ -23,6 +26,7 @@ export const leadKeys = {
   all: ["leads"] as const,
   filters: ["lead-filters"] as const,
   lists: () => [...leadKeys.all, "list"] as const,
+  list: (params: LeadListParams) => [...leadKeys.lists(), params] as const,
   detail: (id: string | number) => [...leadKeys.all, id.toString()] as const,
 };
 
@@ -36,6 +40,14 @@ export function useLeadFilters() {
     queryKey: leadKeys.filters,
     queryFn: getLeadFilters,
     staleTime: 5 * 60 * 1000,
+  });
+}
+
+// 2. Fetch leads with server-side filters, search, pagination, and summary cards
+export function useLeadList(params: LeadListParams) {
+  return useQuery<LeadListResponse>({
+    queryKey: leadKeys.list(params),
+    queryFn: () => getLeadList(params),
   });
 }
 
