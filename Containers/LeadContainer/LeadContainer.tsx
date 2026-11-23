@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 
 import { useLeadList } from "@/hooks/useLeads";
-import type { LeadListItem, LeadStatusCard } from "@/types/lead";
+import type { LeadListItem, LeadStatusCard, LeadSummary } from "@/types/lead";
 
 const PER_PAGE = 15;
 
@@ -110,7 +110,8 @@ export default function LeadContainer() {
 
   const leads: LeadListItem[] = data?.data ?? [];
   const pagination = data?.pagination;
-  const summary = data?.summary ?? {
+
+  const summary: LeadSummary = data?.summary ?? {
     total_leads: 0,
     status_cards: [],
   };
@@ -118,14 +119,14 @@ export default function LeadContainer() {
   const totalPages = pagination?.last_page ?? 1;
   const totalRecords = pagination?.total ?? 0;
   const fromRecord =
-    pagination?.from ??
-    (leads.length > 0 ? (page - 1) * PER_PAGE + 1 : 0);
+    pagination?.from ?? (leads.length > 0 ? (page - 1) * PER_PAGE + 1 : 0);
   const toRecord =
     pagination?.to ??
     (leads.length > 0 ? (page - 1) * PER_PAGE + leads.length : 0);
 
   const handlePageChange = (newPage: number) => {
-    if (newPage < 1 || newPage > totalPages || newPage === page || isFetching) return;
+    if (newPage < 1 || newPage > totalPages || newPage === page || isFetching)
+      return;
     setPage(newPage);
   };
 
@@ -146,11 +147,12 @@ export default function LeadContainer() {
     setPage(1);
   };
 
-  const hasActiveFilters = Boolean(debouncedSearch) || Boolean(selectedStatusId);
+  const hasActiveFilters =
+    Boolean(debouncedSearch) || Boolean(selectedStatusId);
 
   // Active status card name if any
   const activeStatusCard = summary.status_cards.find(
-    (card) => String(card.status_id) === String(selectedStatusId)
+    (card) => String(card.status_id) === String(selectedStatusId),
   );
 
   return (
@@ -166,7 +168,8 @@ export default function LeadContainer() {
                 Leads
               </h1>
               <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-[11px] font-semibold text-blue-700">
-                {summary.total_leads} {summary.total_leads === 1 ? "lead" : "leads"}
+                {summary.total_leads}{" "}
+                {summary.total_leads === 1 ? "lead" : "leads"}
               </span>
               {activeStatusCard && (
                 <span
@@ -251,7 +254,8 @@ export default function LeadContainer() {
 
             {/* DYNAMIC STATUS CARDS FROM API SUMMARY */}
             {summary.status_cards.map((card: LeadStatusCard) => {
-              const isActive = String(selectedStatusId) === String(card.status_id);
+              const isActive =
+                String(selectedStatusId) === String(card.status_id);
               const Icon = getStatusIcon(card.slug);
 
               return (
@@ -402,7 +406,9 @@ export default function LeadContainer() {
         ==================================================== */}
         {isError && (
           <div className="mb-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-xs text-red-800">
-            <p className="font-semibold">Failed to load leads from the server.</p>
+            <p className="font-semibold">
+              Failed to load leads from the server.
+            </p>
             <p className="mt-0.5 text-red-600">
               {(error as { message?: string })?.message ||
                 "Please verify your authorization token or network connection."}
@@ -418,9 +424,9 @@ export default function LeadContainer() {
         )}
 
         {/* ====================================================
-            LOADING SKELETON
+            LOADING SKELETON (Initial load only)
         ==================================================== */}
-        {isLoading && (
+        {isLoading && !data && (
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="space-y-4">
               {[...Array(6)].map((_, i) => (
@@ -448,7 +454,7 @@ export default function LeadContainer() {
         {/* ====================================================
             EMPTY STATE
         ==================================================== */}
-        {!isLoading && !isError && leads.length === 0 && (
+        {!isLoading && !isFetching && !isError && leads.length === 0 && (
           <div className="rounded-2xl border border-slate-200 bg-white py-16 text-center shadow-sm">
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
               <UserRound size={28} />
@@ -484,8 +490,12 @@ export default function LeadContainer() {
         {/* ====================================================
             DESKTOP TABLE VIEW
         ==================================================== */}
-        {!isLoading && !isError && leads.length > 0 && (
-          <div className="hidden overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:block">
+        {!isError && leads.length > 0 && (
+          <div
+            className={`hidden overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-opacity duration-150 lg:block ${
+              isFetching ? "opacity-60" : "opacity-100"
+            }`}
+          >
             <div className="overflow-x-auto">
               <table className="w-full min-w-[1050px] border-collapse text-left">
                 <thead>
@@ -498,7 +508,9 @@ export default function LeadContainer() {
                     <th className="px-4 py-3.5">Product</th>
                     <th className="px-4 py-3.5">Assigned To</th>
                     <th className="px-4 py-3.5">Remarks</th>
-                    <th className="w-[100px] px-4 py-3.5 text-center">Actions</th>
+                    <th className="w-[100px] px-4 py-3.5 text-center">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
 
@@ -586,7 +598,10 @@ export default function LeadContainer() {
 
                         {/* PRODUCT */}
                         <td className="px-4 py-3 text-slate-600">
-                          <span className="line-clamp-1 max-w-[130px]" title={productName}>
+                          <span
+                            className="line-clamp-1 max-w-[130px]"
+                            title={productName}
+                          >
                             {productName}
                           </span>
                         </td>
@@ -597,13 +612,18 @@ export default function LeadContainer() {
                             <div className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-[10px] font-bold text-slate-600">
                               {getInitials(lead.assigned_to)}
                             </div>
-                            <span className="text-xs">{lead.assigned_to || "-"}</span>
+                            <span className="text-xs">
+                              {lead.assigned_to || "-"}
+                            </span>
                           </div>
                         </td>
 
                         {/* REMARKS */}
                         <td className="px-4 py-3 text-slate-500">
-                          <p className="line-clamp-2 max-w-[180px] text-[11px]" title={lead.remarks || ""}>
+                          <p
+                            className="line-clamp-2 max-w-[180px] text-[11px]"
+                            title={lead.remarks || ""}
+                          >
                             {lead.remarks || "-"}
                           </p>
                         </td>
@@ -648,7 +668,10 @@ export default function LeadContainer() {
                 </button>
 
                 {Array.from({ length: totalPages }, (_, i) => i + 1)
-                  .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
+                  .filter(
+                    (p) =>
+                      p === 1 || p === totalPages || Math.abs(p - page) <= 1,
+                  )
                   .map((p, idx, arr) => {
                     const prevP = arr[idx - 1];
                     const showEllipsis = prevP && p - prevP > 1;
@@ -656,7 +679,9 @@ export default function LeadContainer() {
                     return (
                       <div key={p} className="flex items-center">
                         {showEllipsis && (
-                          <span className="px-1 text-xs text-slate-400">...</span>
+                          <span className="px-1 text-xs text-slate-400">
+                            ...
+                          </span>
                         )}
                         <button
                           type="button"
@@ -692,12 +717,17 @@ export default function LeadContainer() {
             MOBILE CARDS VIEW
             Shown on < lg screens: original mobile layout matching LeadTable
         ==================================================== */}
-        {!isLoading && !isError && leads.length > 0 && (
-          <div className="space-y-3 lg:hidden">
+        {!isError && leads.length > 0 && (
+          <div
+            className={`space-y-3 transition-opacity duration-150 lg:hidden ${
+              isFetching ? "opacity-60" : "opacity-100"
+            }`}
+          >
             <div className="overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm">
               {leads.map((lead, idx) => {
                 const initials = getInitials(lead.name);
-                const avatarBg = AVATAR_BG_COLORS[idx % AVATAR_BG_COLORS.length];
+                const avatarBg =
+                  AVATAR_BG_COLORS[idx % AVATAR_BG_COLORS.length];
                 const statusColor = lead.status_color || "#3B82F6";
 
                 return (
@@ -729,8 +759,14 @@ export default function LeadContainer() {
                           </p>
 
                           <div className="mt-1.5 flex min-w-0 items-center gap-1 text-[8px] text-[#65799f]">
-                            <Building2 size={10} strokeWidth={2} className="shrink-0" />
-                            <span className="truncate">{lead.source || "-"}</span>
+                            <Building2
+                              size={10}
+                              strokeWidth={2}
+                              className="shrink-0"
+                            />
+                            <span className="truncate">
+                              {lead.source || "-"}
+                            </span>
                           </div>
                         </div>
 

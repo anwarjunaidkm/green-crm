@@ -48,6 +48,8 @@ export function useLeadList(params: LeadListParams) {
   return useQuery<LeadListResponse>({
     queryKey: leadKeys.list(params),
     queryFn: () => getLeadList(params),
+    placeholderData: (previousData) => previousData,
+    staleTime: 60 * 1000,
   });
 }
 
