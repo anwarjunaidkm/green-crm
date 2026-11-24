@@ -3,10 +3,13 @@ import type { LoginApiResponse, LogoutApiResponse, User } from "@/types/auth";
 import type {
   CreateLeadPayload,
   CreateLeadResponse,
+  DeleteLeadResponse,
   LeadFiltersData,
   LeadFiltersResponse,
   LeadListParams,
   LeadListResponse,
+  UpdateLeadPayload,
+  UpdateLeadResponse,
   UpdateLeadStatusPayload,
   UpdateLeadStatusResponse,
   ViewLeadResponse,
@@ -191,11 +194,52 @@ export const createLead = async (
   return response.data;
 };
 
+/**
+ * Update lead via backend API
+ * PUT /update-lead
+ */
 export const updateLead = async (
-  id: string | number,
-  leadData: Record<string, unknown>,
-) => {
-  const response = await api.put(`/leads/${id}`, leadData);
+  payload: UpdateLeadPayload,
+): Promise<UpdateLeadResponse> => {
+  const body: Record<string, unknown> = {
+    id: Number(payload.id),
+    customer_name: payload.customer_name.trim(),
+    phone: payload.phone.trim(),
+  };
+
+  if (
+    payload.lead_channel_id !== undefined &&
+    payload.lead_channel_id !== null &&
+    payload.lead_channel_id !== ""
+  ) {
+    body.lead_channel_id = Number(payload.lead_channel_id);
+  }
+
+  if (payload.remarks !== undefined && payload.remarks !== null) {
+    body.remarks = payload.remarks.trim();
+  }
+
+  if (payload.email !== undefined && payload.email !== null) {
+    body.email = payload.email.trim();
+  }
+
+  if (payload.company !== undefined && payload.company !== null) {
+    body.company = payload.company.trim();
+  }
+
+  if (payload.location !== undefined && payload.location !== null) {
+    body.location = payload.location.trim();
+  }
+
+  if (
+    payload.product_id !== undefined &&
+    payload.product_id !== null &&
+    payload.product_id !== ""
+  ) {
+    body.product_id = Number(payload.product_id);
+  }
+
+  const response = await api.put<UpdateLeadResponse>("/update-lead", body);
   return response.data;
 };
 
@@ -228,8 +272,17 @@ export const updateLeadStatus = async (
   return response.data;
 };
 
-export const deleteLead = async (id: string | number) => {
-  const response = await api.delete(`/leads/${id}`);
+/**
+ * Delete a lead via backend API
+ * DELETE /delete-lead
+ * Body: { id: number }
+ */
+export const deleteLead = async (
+  id: string | number,
+): Promise<DeleteLeadResponse> => {
+  const response = await api.delete<DeleteLeadResponse>("/delete-lead", {
+    data: { id: Number(id) },
+  });
   return response.data;
 };
 

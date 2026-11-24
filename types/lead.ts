@@ -262,3 +262,40 @@ export interface UpdateLeadStatusResponse {
   data?: any;
   errors?: Record<string, string[]>;
 }
+
+// ============================================================
+// UPDATE LEAD API PAYLOAD & RESPONSE
+// ============================================================
+
+export interface UpdateLeadPayload {
+  id: number | string;
+  customer_name: string;
+  phone: string;
+  lead_channel_id?: number | string | null;
+  remarks?: string;
+  email?: string;
+  company?: string;
+  location?: string;
+  product_id?: number | string | null;
+}
+
+export interface UpdateLeadResponse {
+  status: boolean;
+  message: string;
+  data?: any;
+  errors?: Record<string, string[]>;
+}
+
+// ============================================================
+// DELETE LEAD API PAYLOAD & RESPONSE
+// ============================================================
+
+export interface DeleteLeadPayload {
+  id: number | string;
+}
+
+export interface DeleteLeadResponse {
+  status: boolean;
+  message: string;
+  data?: any;
+}

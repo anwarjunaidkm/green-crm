@@ -6,10 +6,8 @@ import { useRouter } from "next/navigation";
 import {
   AlertCircle,
   ArrowLeft,
-  Building2,
   CheckCircle2,
   Mail,
-  MapPin,
   MessageSquare,
   Package,
   Phone,
@@ -28,8 +26,6 @@ interface LeadFormData {
   customer_name: string;
   phone: string;
   email: string;
-  company: string;
-  location: string;
   lead_channel_id: string | number;
   lead_status_id: string | number;
   product_id: string | number;
@@ -40,8 +36,6 @@ const initialFormData: LeadFormData = {
   customer_name: "",
   phone: "",
   email: "",
-  company: "",
-  location: "",
   lead_channel_id: "",
   lead_status_id: "",
   product_id: "",
@@ -173,8 +167,6 @@ export default function AddLead() {
         product_id: form.product_id ? Number(form.product_id) : undefined,
         remarks: form.remarks.trim() || undefined,
         email: form.email.trim() || undefined,
-        company: form.company.trim() || undefined,
-        location: form.location.trim() || undefined,
       });
 
       setIsSuccess(true);
@@ -361,37 +353,9 @@ export default function AddLead() {
                 </div>
               </div>
 
-              {/* 2. BUSINESS INFORMATION */}
+              {/* 2. PRODUCT INTEREST (OPTIONAL) */}
               <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-                <SectionTitle
-                  number="2"
-                  title="Business Information (Optional)"
-                />
-
-                <div className="mt-4 space-y-4">
-                  <Field
-                    icon={Building2}
-                    label="Company Name"
-                    name="company"
-                    value={form.company}
-                    onChange={handleChange}
-                    placeholder="Enter company name"
-                  />
-
-                  <Field
-                    icon={MapPin}
-                    label="Location"
-                    name="location"
-                    value={form.location}
-                    onChange={handleChange}
-                    placeholder="Enter location"
-                  />
-                </div>
-              </div>
-
-              {/* 3. PRODUCT INTEREST (OPTIONAL) */}
-              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-                <SectionTitle number="3" title="Product Interest (Optional)" />
+                <SectionTitle number="2" title="Product Interest (Optional)" />
 
                 <div className="mt-4">
                   <label
@@ -453,9 +417,9 @@ export default function AddLead() {
                 </div>
               </div>
 
-              {/* 4. REMARKS / NOTES */}
+              {/* 3. REMARKS / NOTES */}
               <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-                <SectionTitle number="4" title="Remarks / Requirement Note" />
+                <SectionTitle number="3" title="Remarks / Requirement Note" />
 
                 <div className="mt-4">
                   <label
@@ -487,10 +451,10 @@ export default function AddLead() {
                 RIGHT COLUMN — LEAD DETAILS & ACTIONS
             ================================================== */}
             <div className="space-y-5">
-              {/* 5. LEAD CHANNEL & STATUS */}
+              {/* 4. LEAD CHANNEL & STATUS */}
               <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
                 <SectionTitle
-                  number="5"
+                  number="4"
                   title="Lead Source & Status (Optional)"
                 />
 
@@ -666,30 +630,12 @@ export default function AddLead() {
                   </div>
                 </div>
 
-                {(form.company || form.location || form.email) && (
+                {form.email && (
                   <div className="mt-4 border-t border-blue-100/70 pt-3 text-[11px] text-slate-600 space-y-1">
-                    {form.company && (
-                      <p className="truncate">
-                        Company:{" "}
-                        <strong className="text-slate-800">
-                          {form.company}
-                        </strong>
-                      </p>
-                    )}
-                    {form.location && (
-                      <p className="truncate">
-                        Location:{" "}
-                        <strong className="text-slate-800">
-                          {form.location}
-                        </strong>
-                      </p>
-                    )}
-                    {form.email && (
-                      <p className="truncate">
-                        Email:{" "}
-                        <strong className="text-slate-800">{form.email}</strong>
-                      </p>
-                    )}
+                    <p className="truncate">
+                      Email:{" "}
+                      <strong className="text-slate-800">{form.email}</strong>
+                    </p>
                   </div>
                 )}
               </div>

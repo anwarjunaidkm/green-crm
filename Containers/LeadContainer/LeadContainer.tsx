@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  AlertTriangle,
   Building2,
   CalendarDays,
   CheckCircle2,
@@ -18,13 +19,14 @@ import {
   RefreshCw,
   Search,
   Tag,
+  Trash2,
   UserRound,
   Users,
   UserX,
   X,
 } from "lucide-react";
 
-import { useLeadList } from "@/hooks/useLeads";
+import { useDeleteLead, useLeadList } from "@/hooks/useLeads";
 import type { LeadListItem, LeadStatusCard, LeadSummary } from "@/types/lead";
 
 const PER_PAGE = 15;
@@ -85,6 +87,9 @@ const AVATAR_BG_COLORS = [
 
 export default function LeadContainer() {
   const router = useRouter();
+  const deleteLeadMutation = useDeleteLead();
+  const [leadToDelete, setLeadToDelete] = useState<LeadListItem | null>(null);
+  const [deleteError, setDeleteError] = useState("");
   const [page, setPage] = useState(1);
   const [searchInput, setSearchInput] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -630,15 +635,28 @@ export default function LeadContainer() {
 
                         {/* ACTIONS */}
                         <td className="px-4 py-3 text-center">
-                          <div className="flex items-center justify-center">
+                          <div className="flex items-center justify-center gap-1.5">
                             <Link
                               href={`/lead-view/${lead.id}/edit`}
                               onClick={(e) => e.stopPropagation()}
                               title="Edit Lead"
-                              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600"
+                              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:border-[#176b32]/40 hover:bg-green-50 hover:text-[#176b32]"
                             >
                               <Pencil size={13} />
                             </Link>
+
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeleteError("");
+                                setLeadToDelete(lead);
+                              }}
+                              title="Delete Lead"
+                              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:border-red-300 hover:bg-red-50 hover:text-red-600"
+                            >
+                              <Trash2 size={13} />
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -807,7 +825,7 @@ export default function LeadContainer() {
                       </div>
                     </Link>
 
-                    {/* MOBILE ACTIONS: CALL & SMS (OUTSIDE LINK) */}
+                    {/* MOBILE ACTIONS: CALL, SMS & DELETE (OUTSIDE LINK) */}
                     <div className="absolute bottom-3 right-3 flex items-center gap-1.5">
                       <a
                         href={`tel:${lead.phone}`}
@@ -824,6 +842,20 @@ export default function LeadContainer() {
                       >
                         <MessageSquare size={12} />
                       </a>
+
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setDeleteError("");
+                          setLeadToDelete(lead);
+                        }}
+                        aria-label={`Delete ${lead.name}`}
+                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-red-200 bg-red-50 text-red-600 transition hover:bg-red-100 active:scale-95"
+                      >
+                        <Trash2 size={12} />
+                      </button>
                     </div>
 
                     {/* VIEW ARROW */}
@@ -870,6 +902,98 @@ export default function LeadContainer() {
           </div>
         )}
       </div>
+
+      {/* DELETE CONFIRMATION MODAL */}
+      {leadToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity"
+            onClick={() => !deleteLeadMutation.isPending && setLeadToDelete(null)}
+          />
+
+          <div className="relative w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-xl">
+            <button
+              type="button"
+              onClick={() => setLeadToDelete(null)}
+              disabled={deleteLeadMutation.isPending}
+              className="absolute right-4 top-4 rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
+            >
+              <X size={18} />
+            </button>
+
+            <div className="flex items-center gap-3.5">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-red-100 text-red-600">
+                <AlertTriangle size={22} />
+              </div>
+
+              <div>
+                <h3 className="text-sm font-semibold text-[#0b1d48]">
+                  Delete Lead
+                </h3>
+                <p className="text-[11px] text-slate-500">
+                  This action is permanent and cannot be undone.
+                </p>
+              </div>
+            </div>
+
+            <p className="mt-4 text-xs leading-relaxed text-slate-600">
+              Are you sure you want to delete lead <strong className="text-[#0b1d48]">{leadToDelete.name}</strong> ({leadToDelete.lead_code})?
+            </p>
+
+            {deleteError && (
+              <p className="mt-3 rounded-lg bg-red-50 p-2.5 text-xs text-red-600">
+                {deleteError}
+              </p>
+            )}
+
+            <div className="mt-6 flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                disabled={deleteLeadMutation.isPending}
+                onClick={() => setLeadToDelete(null)}
+                className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                disabled={deleteLeadMutation.isPending}
+                onClick={async () => {
+                  try {
+                    setDeleteError("");
+                    await deleteLeadMutation.mutateAsync(leadToDelete.id);
+                    setLeadToDelete(null);
+                  } catch (err: unknown) {
+                    const errorObj = err as {
+                      response?: { data?: { message?: string } };
+                      message?: string;
+                    };
+                    setDeleteError(
+                      errorObj.response?.data?.message ||
+                        errorObj.message ||
+                        "Failed to delete lead. Please try again."
+                    );
+                  }
+                }}
+                className="flex items-center gap-1.5 rounded-xl bg-red-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-red-700 active:scale-[0.99] transition disabled:opacity-50"
+              >
+                {deleteLeadMutation.isPending ? (
+                  <>
+                    <RefreshCw size={13} className="animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={13} />
+                    Delete Lead
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -17,6 +17,7 @@ import type {
   LeadFiltersData,
   LeadListParams,
   LeadListResponse,
+  UpdateLeadPayload,
   UpdateLeadStatusPayload,
   ViewLeadResponse,
 } from "@/types/lead";
@@ -101,15 +102,14 @@ export function useUpdateLead() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
-      id,
-      data,
-    }: {
-      id: string | number;
-      data: Record<string, unknown>;
-    }) => updateLead(id, data),
-    onSuccess: () => {
+    mutationFn: (payload: UpdateLeadPayload) => updateLead(payload),
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: leadKeys.all });
+      if (variables?.id) {
+        queryClient.invalidateQueries({
+          queryKey: leadKeys.view(variables.id),
+        });
+      }
     },
   });
 }
@@ -137,8 +137,9 @@ export function useDeleteLead() {
 
   return useMutation({
     mutationFn: (id: string | number) => deleteLead(id),
-    onSuccess: () => {
+    onSuccess: (_, deletedId) => {
       queryClient.invalidateQueries({ queryKey: leadKeys.all });
+      queryClient.removeQueries({ queryKey: leadKeys.view(deletedId) });
     },
   });
 }
