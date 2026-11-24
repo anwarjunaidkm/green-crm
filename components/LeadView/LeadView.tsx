@@ -3,29 +3,22 @@
 import Link from "next/link";
 import {
   ArrowLeft,
-  Building2,
   CalendarDays,
   Check,
   Clock3,
   FileText,
   Mail,
-  MapPin,
   MessageCircle,
   MessageSquare,
   MoreHorizontal,
   Pencil,
   Phone,
   UserRound,
+  Waypoints,
 } from "lucide-react";
 
-import {
-  LEAD_STATUS,
-  LEAD_STATUS_STYLES,
-  type LeadStatus,
-} from "@/config/leadConfig";
 import type {
   LeadProgressStep,
-  LeadTimelineItem,
   LeadUpdateHistoryItem,
   ViewLeadData,
 } from "@/types/lead";
@@ -35,90 +28,49 @@ import LeadTimeline from "@/components/LeadView/LeadTimeline";
 // TYPES
 // ============================================================
 
-export interface LeadViewData {
-  id: string;
-  name: string;
-  avatar?: string;
-  phone: string;
-  email: string;
-  company: string;
-  location: string;
-  assignedTo: string;
-  source: string;
-  status: LeadStatus | string;
-  createdAt: string;
-  createdTime: string;
-  followUpDate: string;
-  followUpTime: string;
-  followUpNote: string;
-  timeline: LeadTimelineItem[];
-}
-
 interface LeadViewProps {
-  data?: ViewLeadData;
-  lead?: LeadViewData;
+  data: ViewLeadData;
 }
-
-// Fallback status flow when lead_progress from API is not available
-const FALLBACK_STATUS_FLOW: {
-  value: LeadStatus;
-  label: string;
-}[] = [
-  { value: LEAD_STATUS.NEW_LEAD, label: "New Lead" },
-  { value: LEAD_STATUS.CONTACTED, label: "Contacted" },
-  { value: LEAD_STATUS.INTERESTED, label: "Interested" },
-  { value: LEAD_STATUS.FOLLOW_UP, label: "Follow-up" },
-  { value: LEAD_STATUS.PROPOSAL_SENT, label: "Proposal" },
-  { value: LEAD_STATUS.CLOSED_WON, label: "Won" },
-];
 
 // ============================================================
 // COMPONENT
 // ============================================================
 
-export default function LeadView({ data, lead }: LeadViewProps) {
-  // Normalize data whether it comes from the API (data) or legacy/storage (lead)
-  const basic = data?.basic_details;
+export default function LeadView({ data }: LeadViewProps) {
+  const basic = data.basic_details;
 
-  const id = basic?.id ? String(basic.id) : lead?.id || "";
-  const leadCode = basic?.lead_code || (id ? `#${id}` : "");
-  const name = basic?.customer_name || basic?.name || lead?.name || "Lead Details";
-  const phone = basic?.phone || lead?.phone || "";
-  const email = basic?.email || lead?.email || "";
-  const company = basic?.company || lead?.company || "";
-  const location = basic?.location || lead?.location || "";
-  const assignedTo = basic?.assigned_to || lead?.assignedTo || "-";
-  const createdBy = basic?.created_by || "";
-  const source = basic?.lead_channel || basic?.source || lead?.source || "-";
-  const statusName = basic?.lead_status || (lead?.status as string) || "New";
-  const statusColor = basic?.lead_status_color || "#3B82F6";
+  const id = String(basic.id);
+  const leadCode = basic.lead_code || `#${id}`;
+  const name = basic.customer_name || basic.name || "Lead Details";
+  const phone = basic.phone || "";
+  const email = basic.email || "";
+  const assignedTo = basic.assigned_to || "-";
+  const createdBy = basic.created_by || "";
+  const source = basic.lead_channel || basic.source || "-";
+  const statusName = basic.lead_status || "New";
+  const statusColor = basic.lead_status_color || "#3B82F6";
 
   const createdAtFormatted =
-    basic?.created_at_formatted ||
-    (lead?.createdAt
-      ? `${lead.createdAt}${lead.createdTime ? ` • ${lead.createdTime}` : ""}`
-      : basic?.created_at
-        ? new Date(basic.created_at).toLocaleDateString()
-        : "-");
+    basic.created_at_formatted ||
+    (basic.created_at
+      ? new Date(basic.created_at).toLocaleDateString()
+      : "-");
 
   const followUpDate =
-    basic?.next_follow_up_date_formatted ||
-    basic?.next_follow_up ||
-    basic?.next_follow_up_date ||
-    lead?.followUpDate ||
+    basic.next_follow_up_date_formatted ||
+    basic.next_follow_up ||
+    basic.next_follow_up_date ||
     "";
 
   const followUpTime =
-    basic?.next_follow_up_time_formatted ||
-    basic?.next_follow_up_time ||
-    lead?.followUpTime ||
+    basic.next_follow_up_time_formatted ||
+    basic.next_follow_up_time ||
     "";
 
-  const followUpNote = basic?.remarks || lead?.followUpNote || "";
+  const followUpNote = basic.remarks || "";
 
-  const leadProgress = data?.lead_progress ?? [];
-  const updateHistory: LeadUpdateHistoryItem[] = data?.update_history ?? [];
-  const timeline: LeadTimelineItem[] = lead?.timeline ?? [];
+  const leadProgress = data.lead_progress ?? [];
+  const updateHistory: LeadUpdateHistoryItem[] = data.update_history ?? [];
 
   return (
     <div className="min-h-full bg-[#f6f8fc] pb-8">
@@ -157,7 +109,7 @@ export default function LeadView({ data, lead }: LeadViewProps) {
           <div className="flex items-center gap-2">
             <Link
               href={`/lead-view/${id}/edit`}
-              className="flex h-9 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-[11px] font-medium text-slate-600 transition hover:bg-slate-50 hover:text-blue-600"
+              className="flex h-9 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-[11px] font-medium text-slate-600 transition hover:bg-slate-50 hover:text-[#176b32]"
             >
               <Pencil size={14} />
               Edit
@@ -185,7 +137,7 @@ export default function LeadView({ data, lead }: LeadViewProps) {
           <div className="p-4 sm:p-5 lg:p-6">
             <div className="flex items-start gap-3 lg:gap-4">
               {/* AVATAR */}
-              <LeadAvatar name={name} avatar={lead?.avatar} />
+              <LeadAvatar name={name} />
 
               {/* NAME / STATUS */}
               <div className="min-w-0 flex-1">
@@ -205,7 +157,7 @@ export default function LeadView({ data, lead }: LeadViewProps) {
 
                 <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[9px] text-slate-500 lg:text-[10px]">
                   <span className="flex items-center gap-1">
-                    <Building2 size={12} />
+                    <Waypoints size={12} />
                     {source}
                   </span>
 
@@ -256,7 +208,8 @@ export default function LeadView({ data, lead }: LeadViewProps) {
 
             <DynamicStatusProgress
               progress={leadProgress}
-              fallbackStatus={statusName}
+              currentStatus={statusName}
+              currentStatusColor={statusColor}
             />
           </div>
         </section>
@@ -269,11 +222,9 @@ export default function LeadView({ data, lead }: LeadViewProps) {
           <LeadInformation
             phone={phone}
             email={email}
-            company={company}
-            location={location}
             assignedTo={assignedTo}
             source={source}
-            remarks={basic?.remarks}
+            remarks={basic.remarks}
           />
 
           {/* NEXT FOLLOW-UP */}
@@ -281,19 +232,16 @@ export default function LeadView({ data, lead }: LeadViewProps) {
             date={followUpDate}
             time={followUpTime}
             note={followUpNote}
-            followUpDay={basic?.follow_up_day}
+            followUpDay={basic.follow_up_day}
           />
 
           {/* UPDATE HISTORY */}
-          <LeadTimeline
-            updateHistory={updateHistory}
-            timeline={timeline}
-          />
+          <LeadTimeline updateHistory={updateHistory} />
 
           {/* UPDATE STATUS BUTTON */}
           <Link
             href={`/lead-view/${id}/update-status`}
-            className="flex h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-[#0868f7] text-[13px] font-semibold text-white shadow-[0_4px_12px_rgba(8,104,247,0.18)] transition hover:bg-[#005de2] active:scale-[0.99]"
+            className="flex h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-[#176b32] text-[13px] font-semibold text-white shadow-[0_4px_12px_rgba(23,107,50,0.18)] transition hover:bg-[#125727] active:scale-[0.99]"
           >
             <Pencil size={16} />
             Update Status
@@ -309,18 +257,13 @@ export default function LeadView({ data, lead }: LeadViewProps) {
             <LeadInformation
               phone={phone}
               email={email}
-              company={company}
-              location={location}
               assignedTo={assignedTo}
               source={source}
-              remarks={basic?.remarks}
+              remarks={basic.remarks}
             />
 
             {/* UPDATE HISTORY TIMELINE */}
-            <LeadTimeline
-              updateHistory={updateHistory}
-              timeline={timeline}
-            />
+            <LeadTimeline updateHistory={updateHistory} />
           </div>
 
           {/* RIGHT COLUMN */}
@@ -329,7 +272,7 @@ export default function LeadView({ data, lead }: LeadViewProps) {
               date={followUpDate}
               time={followUpTime}
               note={followUpNote}
-              followUpDay={basic?.follow_up_day}
+              followUpDay={basic.follow_up_day}
             />
 
             {/* CURRENT STATUS */}
@@ -362,7 +305,7 @@ export default function LeadView({ data, lead }: LeadViewProps) {
 
               <Link
                 href={`/lead-view/${id}/update-status`}
-                className="mt-5 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#0868f7] text-[11px] font-semibold text-white shadow-[0_4px_12px_rgba(8,104,247,0.16)] transition hover:bg-[#005de2]"
+                className="mt-5 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#176b32] text-[11px] font-semibold text-white shadow-[0_4px_12px_rgba(23,107,50,0.16)] transition hover:bg-[#125727]"
               >
                 <Pencil size={14} />
                 Update Status
@@ -399,16 +342,12 @@ export default function LeadView({ data, lead }: LeadViewProps) {
 function LeadInformation({
   phone,
   email,
-  company,
-  location,
   assignedTo,
   source,
   remarks,
 }: {
   phone: string;
   email: string;
-  company: string;
-  location: string;
   assignedTo: string;
   source: string;
   remarks?: string;
@@ -421,7 +360,7 @@ function LeadInformation({
             Lead Information
           </h3>
           <p className="mt-1 hidden text-[9px] text-slate-400 sm:block">
-            Contact and business information
+            Contact and lead details
           </p>
         </div>
       </div>
@@ -442,26 +381,14 @@ function LeadInformation({
         />
 
         <InformationRow
-          icon={Building2}
-          label="Company"
-          value={company || "-"}
-        />
-
-        <InformationRow
-          icon={MapPin}
-          label="Location"
-          value={location || "-"}
-        />
-
-        <InformationRow
           icon={UserRound}
           label="Assigned To"
           value={assignedTo || "-"}
         />
 
         <InformationRow
-          icon={Building2}
-          label="Source"
+          icon={Waypoints}
+          label="Source / Channel"
           value={source || "-"}
         />
 
@@ -613,12 +540,14 @@ function NextFollowUp({
 
 function DynamicStatusProgress({
   progress,
-  fallbackStatus,
+  currentStatus,
+  currentStatusColor,
 }: {
   progress: LeadProgressStep[];
-  fallbackStatus: string;
+  currentStatus: string;
+  currentStatusColor: string;
 }) {
-  // If API returned progress steps, render them
+  // If API returned progress steps, render them dynamically
   if (progress && progress.length > 0) {
     return (
       <div className="overflow-x-auto pb-1">
@@ -652,9 +581,7 @@ function DynamicStatusProgress({
                   style={{
                     borderColor:
                       completed || active ? stepColor : "#cbd5e1",
-                    backgroundColor: completed
-                      ? stepColor
-                      : "#ffffff",
+                    backgroundColor: completed ? stepColor : "#ffffff",
                     color: completed ? "#ffffff" : stepColor,
                   }}
                 >
@@ -694,63 +621,24 @@ function DynamicStatusProgress({
     );
   }
 
-  // Fallback to static flow if no progress array returned
-  const currentIndex = FALLBACK_STATUS_FLOW.findIndex(
-    (item) => item.label.toLowerCase() === fallbackStatus.toLowerCase(),
-  );
-  const safeCurrentIndex = currentIndex >= 0 ? currentIndex : 0;
-
+  // If no progression chain returned, show current status cleanly
   return (
-    <div className="overflow-x-auto pb-1">
-      <div className="flex min-w-[320px] items-start">
-        {FALLBACK_STATUS_FLOW.map((item, index) => {
-          const completed = index < safeCurrentIndex;
-          const active = index === safeCurrentIndex;
-
-          return (
-            <div
-              key={item.value}
-              className="relative flex flex-1 flex-col items-center"
-            >
-              {index < FALLBACK_STATUS_FLOW.length - 1 && (
-                <div
-                  className={`absolute left-1/2 top-[11px] h-[2px] w-full ${
-                    index < safeCurrentIndex ? "bg-blue-600" : "bg-slate-200"
-                  }`}
-                />
-              )}
-
-              <div
-                className={`relative z-10 flex h-[23px] w-[23px] items-center justify-center rounded-full border-2 transition ${
-                  completed
-                    ? "border-blue-600 bg-blue-600 text-white"
-                    : active
-                      ? "border-blue-600 bg-white text-blue-600"
-                      : "border-slate-200 bg-white text-slate-300"
-                }`}
-              >
-                {completed ? (
-                  <Check size={11} strokeWidth={3} />
-                ) : (
-                  <span
-                    className={`h-1.5 w-1.5 rounded-full ${
-                      active ? "bg-blue-600" : "bg-slate-300"
-                    }`}
-                  />
-                )}
-              </div>
-
-              <p
-                className={`mt-2 whitespace-nowrap text-center text-[7px] font-medium sm:text-[8px] ${
-                  active || completed ? "text-blue-600" : "text-slate-400"
-                }`}
-              >
-                {item.label}
-              </p>
-            </div>
-          );
-        })}
-      </div>
+    <div className="flex items-center gap-2 py-1">
+      <span
+        className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium"
+        style={{
+          backgroundColor: `${currentStatusColor}15`,
+          color: currentStatusColor,
+          borderColor: `${currentStatusColor}35`,
+          borderWidth: 1,
+        }}
+      >
+        <span
+          className="h-2 w-2 rounded-full"
+          style={{ backgroundColor: currentStatusColor }}
+        />
+        {currentStatus}
+      </span>
     </div>
   );
 }
@@ -807,8 +695,8 @@ function QuickAction({
 // AVATAR
 // ============================================================
 
-function LeadAvatar({ name, avatar }: { name: string; avatar?: string }) {
-  const initial = (avatar || name || "L").charAt(0).toUpperCase();
+function LeadAvatar({ name }: { name: string }) {
+  const initial = (name || "L").charAt(0).toUpperCase();
 
   return (
     <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#dce9ff] text-[19px] font-semibold text-[#0968f7] lg:h-16 lg:w-16 lg:text-[22px]">
@@ -830,10 +718,6 @@ function StatusBadge({
   color?: string;
   large?: boolean;
 }) {
-  const fallbackClass =
-    (LEAD_STATUS_STYLES as Record<string, string>)[status] ||
-    "bg-blue-50 text-blue-700 border-blue-200";
-
   if (color) {
     return (
       <span
@@ -858,7 +742,7 @@ function StatusBadge({
 
   return (
     <span
-      className={`inline-flex whitespace-nowrap rounded-full font-medium ${fallbackClass} ${
+      className={`inline-flex whitespace-nowrap rounded-full font-medium bg-blue-50 text-blue-700 border border-blue-200 ${
         large ? "px-3 py-1.5 text-[10px]" : "px-2.5 py-1 text-[8px]"
       }`}
     >
