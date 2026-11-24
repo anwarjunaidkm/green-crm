@@ -137,8 +137,9 @@ export function useDeleteLead() {
 
   return useMutation({
     mutationFn: (id: string | number) => deleteLead(id),
-    onSuccess: () => {
+    onSuccess: (_, deletedId) => {
       queryClient.invalidateQueries({ queryKey: leadKeys.all });
+      queryClient.removeQueries({ queryKey: leadKeys.view(deletedId) });
     },
   });
 }

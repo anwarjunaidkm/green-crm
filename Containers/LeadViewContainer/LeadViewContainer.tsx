@@ -5,8 +5,6 @@ import { ArrowLeft, RefreshCw, AlertCircle } from "lucide-react";
 
 import LeadView from "@/components/LeadView/LeadView";
 import { useViewLead } from "@/hooks/useLeads";
-import type { LeadTimelineItem } from "@/types/lead";
-import type { LeadStatus } from "@/config/leadConfig";
 
 // ============================================================
 // TYPES
@@ -14,26 +12,6 @@ import type { LeadStatus } from "@/config/leadConfig";
 
 interface LeadViewContainerProps {
   leadId: string;
-}
-
-// Keep export for backward compatibility with EditLeadContainer / leadStorage
-export interface LeadViewData {
-  id: string;
-  name: string;
-  avatar: string;
-  phone: string;
-  email: string;
-  company: string;
-  location: string;
-  assignedTo: string;
-  source: string;
-  status: LeadStatus;
-  createdAt: string;
-  createdTime: string;
-  followUpDate: string;
-  followUpTime: string;
-  followUpNote: string;
-  timeline: LeadTimelineItem[];
 }
 
 // ============================================================

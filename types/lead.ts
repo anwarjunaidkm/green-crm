@@ -285,3 +285,17 @@ export interface UpdateLeadResponse {
   data?: any;
   errors?: Record<string, string[]>;
 }
+
+// ============================================================
+// DELETE LEAD API PAYLOAD & RESPONSE
+// ============================================================
+
+export interface DeleteLeadPayload {
+  id: number | string;
+}
+
+export interface DeleteLeadResponse {
+  status: boolean;
+  message: string;
+  data?: any;
+}

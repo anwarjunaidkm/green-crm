@@ -3,6 +3,7 @@ import type { LoginApiResponse, LogoutApiResponse, User } from "@/types/auth";
 import type {
   CreateLeadPayload,
   CreateLeadResponse,
+  DeleteLeadResponse,
   LeadFiltersData,
   LeadFiltersResponse,
   LeadListParams,
@@ -271,8 +272,17 @@ export const updateLeadStatus = async (
   return response.data;
 };
 
-export const deleteLead = async (id: string | number) => {
-  const response = await api.delete(`/leads/${id}`);
+/**
+ * Delete a lead via backend API
+ * DELETE /delete-lead
+ * Body: { id: number }
+ */
+export const deleteLead = async (
+  id: string | number,
+): Promise<DeleteLeadResponse> => {
+  const response = await api.delete<DeleteLeadResponse>("/delete-lead", {
+    data: { id: Number(id) },
+  });
   return response.data;
 };
 
