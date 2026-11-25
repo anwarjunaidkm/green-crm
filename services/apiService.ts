@@ -114,6 +114,15 @@ export const getLeadList = async (
   ) {
     queryParams.set("is_starred", String(params.is_starred));
   }
+  if (params?.date) {
+    queryParams.set("date", params.date);
+  }
+  if (params?.follow_up_date) {
+    queryParams.set("follow_up_date", params.follow_up_date);
+  }
+  if (params?.next_follow_up_date) {
+    queryParams.set("next_follow_up_date", params.next_follow_up_date);
+  }
 
   const qs = queryParams.toString();
   const url = qs ? `/lead-list?${qs}` : "/lead-list";
