@@ -60,16 +60,6 @@ export const menuItems: MenuItem[] = [
         href: "/leads/follow-ups",
         roles: ["staff", "super_admin"],
       },
-      {
-        label: "Confirmed",
-        href: "/leads/confirmed",
-        roles: ["staff", "super_admin"],
-      },
-      {
-        label: "Contacts",
-        href: "/leads/contacts",
-        roles: ["staff", "super_admin"],
-      },
     ],
   },
 

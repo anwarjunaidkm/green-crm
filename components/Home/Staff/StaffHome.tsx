@@ -14,6 +14,8 @@ import {
   Users,
 } from "lucide-react";
 
+import { useLeadList } from "@/hooks/useLeads";
+import type { LeadListItem } from "@/types/lead";
 import type { User } from "@/types/auth";
 
 interface StaffHomeProps {
@@ -51,23 +53,13 @@ const stats = [
   },
 ];
 
-const followUps = [
-  {
-    name: "Ahmed Ali",
-    company: "Green Star Trading",
-    time: "10:30 AM",
-  },
-  {
-    name: "Sarah Khan",
-    company: "Blue Wave LLC",
-    time: "12:00 PM",
-  },
-  {
-    name: "Mohammed Raza",
-    company: "Prime Solutions",
-    time: "3:30 PM",
-  },
-];
+function getCurrentDateString(): string {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
 
 const leadStatus = [
   {
@@ -93,6 +85,16 @@ const leadStatus = [
 ];
 
 export default function StaffHome({ user }: StaffHomeProps) {
+  const currentDate = getCurrentDateString();
+  const { data: followUpsData, isLoading: isFollowUpsLoading } = useLeadList({
+    date: currentDate,
+    per_page: 4,
+  });
+
+  const todayFollowUps: LeadListItem[] = followUpsData?.data?.slice(0, 4) ?? [];
+  const totalFollowUps =
+    followUpsData?.pagination?.total ?? followUpsData?.data?.length ?? 0;
+
   return (
     <div className="mx-auto w-full max-w-[1600px] px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
       {/* ================= WELCOME ================= */}
@@ -182,24 +184,48 @@ export default function StaffHome({ user }: StaffHomeProps) {
                 </h3>
 
                 <p className="mt-0.5 text-[10px] text-slate-400">
-                  3 follow-ups scheduled
+                  {isFollowUpsLoading
+                    ? "Loading follow-ups..."
+                    : `${totalFollowUps} follow-up${totalFollowUps !== 1 ? "s" : ""} scheduled`}
                 </p>
               </div>
             </div>
 
-            <button
-              type="button"
-              className="flex items-center gap-1 text-[10px] font-medium text-[#237738]"
+            <Link
+              href="/leads/follow-ups"
+              className="flex items-center gap-1 text-[10px] font-medium text-[#237738] transition hover:underline"
             >
               View All
               <ChevronRight size={14} />
-            </button>
+            </Link>
           </div>
 
           <div className="px-4 sm:px-5">
-            {followUps.map((item) => (
-              <FollowUpItem key={`${item.name}-${item.time}`} {...item} />
-            ))}
+            {isFollowUpsLoading ? (
+              <div className="space-y-3 py-4">
+                {[1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="flex animate-pulse items-center gap-3 py-2"
+                  >
+                    <div className="h-10 w-10 shrink-0 rounded-full bg-slate-100" />
+                    <div className="flex-1 space-y-1.5">
+                      <div className="h-3 w-28 rounded bg-slate-100" />
+                      <div className="h-2.5 w-16 rounded bg-slate-100" />
+                    </div>
+                    <div className="h-3 w-12 rounded bg-slate-100" />
+                  </div>
+                ))}
+              </div>
+            ) : todayFollowUps.length === 0 ? (
+              <div className="py-8 text-center text-xs text-slate-400">
+                No follow-ups scheduled for today
+              </div>
+            ) : (
+              todayFollowUps.map((item) => (
+                <FollowUpItem key={item.id} lead={item} />
+              ))
+            )}
           </div>
         </div>
 
@@ -272,30 +298,71 @@ function QuickAction({
   );
 }
 
-function FollowUpItem({
-  name,
-  company,
-  time,
-}: {
-  name: string;
-  company: string;
-  time: string;
-}) {
+function FollowUpItem({ lead }: { lead: LeadListItem }) {
+  const initials = lead.name
+    ? lead.name.trim().split(/\s+/).length >= 2
+      ? `${lead.name.trim().split(/\s+/)[0][0]}${lead.name.trim().split(/\s+/)[1][0]}`.toUpperCase()
+      : lead.name.slice(0, 2).toUpperCase()
+    : "?";
+
+  const statusColor = lead.status_color || "#3B82F6";
+
   return (
-    <div className="flex items-center gap-3 border-b border-slate-100 py-4 last:border-0">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#e5f2e7] text-xs font-semibold text-[#287b3a]">
-        {name.charAt(0)}
-      </div>
+    <div className="flex items-center gap-3 border-b border-slate-100 py-3.5 last:border-0">
+      <Link
+        href={`/lead-view/${lead.id}`}
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white transition hover:opacity-90"
+        style={{ backgroundColor: statusColor }}
+      >
+        {initials}
+      </Link>
 
       <div className="min-w-0 flex-1">
-        <p className="truncate text-xs font-semibold text-slate-900">{name}</p>
+        <Link
+          href={`/lead-view/${lead.id}`}
+          className="truncate text-xs font-semibold text-slate-900 transition hover:text-[#176b32]"
+        >
+          {lead.name}
+        </Link>
 
-        <p className="mt-1 truncate text-[10px] text-slate-400">{company}</p>
+        <div className="mt-1 flex items-center gap-2">
+          {lead.phone && (
+            <a
+              href={`tel:${lead.phone}`}
+              className="text-[10px] text-slate-400 transition hover:text-[#176b32]"
+            >
+              {lead.phone}
+            </a>
+          )}
+          {lead.status && (
+            <span
+              className="rounded-full px-1.5 py-0.5 text-[9px] font-semibold"
+              style={{
+                backgroundColor: `${statusColor}18`,
+                color: statusColor,
+              }}
+            >
+              {lead.status}
+            </span>
+          )}
+        </div>
       </div>
 
-      <div className="flex shrink-0 items-center gap-1 text-[10px] font-medium text-slate-500">
-        <Clock3 size={12} />
-        {time}
+      <div className="flex shrink-0 items-center gap-2">
+        <div className="flex items-center gap-1 text-[10px] font-medium text-slate-500">
+          <Clock3 size={12} className="text-slate-400" />
+          <span>{lead.next_follow_up || "-"}</span>
+        </div>
+
+        {lead.phone && (
+          <a
+            href={`tel:${lead.phone}`}
+            aria-label={`Call ${lead.name}`}
+            className="flex h-7 w-7 items-center justify-center rounded-full bg-[#e5f2e7] text-[#287b3a] transition hover:bg-[#287b3a] hover:text-white"
+          >
+            <Phone size={12} />
+          </a>
+        )}
       </div>
     </div>
   );

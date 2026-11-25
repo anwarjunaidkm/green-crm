@@ -123,6 +123,9 @@ export interface LeadListParams {
   product_id?: number | string;
   follow_up_day?: number | string;
   is_starred?: number | boolean | string;
+  date?: string;
+  follow_up_date?: string;
+  next_follow_up_date?: string;
 }
 
 // ============================================================
