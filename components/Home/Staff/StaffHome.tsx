@@ -22,37 +22,6 @@ interface StaffHomeProps {
   user: User;
 }
 
-const stats = [
-  {
-    label: "New Leads",
-    value: "12",
-    today: "+2 today",
-    icon: Users,
-    iconClass: "bg-blue-100 text-blue-600",
-  },
-  {
-    label: "Follow-ups",
-    value: "8",
-    today: "+1 today",
-    icon: Phone,
-    iconClass: "bg-emerald-100 text-emerald-600",
-  },
-  {
-    label: "Confirmed",
-    value: "6",
-    today: "+1 today",
-    icon: CheckCircle2,
-    iconClass: "bg-violet-100 text-violet-600",
-  },
-  {
-    label: "Closed",
-    value: "4",
-    today: "+0 today",
-    icon: Target,
-    iconClass: "bg-orange-100 text-orange-600",
-  },
-];
-
 function getCurrentDateString(): string {
   const today = new Date();
   const year = today.getFullYear();
@@ -61,39 +30,69 @@ function getCurrentDateString(): string {
   return `${year}-${month}-${day}`;
 }
 
-const leadStatus = [
-  {
-    label: "New Leads",
-    value: 12,
-    percentage: 75,
-  },
-  {
-    label: "Follow-ups",
-    value: 8,
-    percentage: 55,
-  },
-  {
-    label: "Confirmed",
-    value: 6,
-    percentage: 40,
-  },
-  {
-    label: "Closed",
-    value: 4,
-    percentage: 25,
-  },
-];
-
 export default function StaffHome({ user }: StaffHomeProps) {
   const currentDate = getCurrentDateString();
+
+  // 1. Fetch general lead summary & total counts
+  const { data: leadsData, isLoading: isLeadsLoading } = useLeadList({
+    per_page: 1,
+  });
+
+  // 2. Fetch today's follow-up leads
   const { data: followUpsData, isLoading: isFollowUpsLoading } = useLeadList({
     follow_up_date: currentDate,
     per_page: 4,
   });
 
+  const summary = leadsData?.summary;
+  const totalLeads = summary?.total_leads ?? 0;
+  const statusCards = summary?.status_cards ?? [];
+
   const todayFollowUps: LeadListItem[] = followUpsData?.data?.slice(0, 4) ?? [];
   const totalFollowUps =
     followUpsData?.pagination?.total ?? followUpsData?.data?.length ?? 0;
+
+  const newLeadsCount =
+    statusCards.find(
+      (c) => c.slug === "new" || c.name.toLowerCase().includes("new"),
+    )?.count ?? 0;
+
+  const confirmedCount =
+    statusCards.find(
+      (c) =>
+        c.slug.includes("confirm") || c.name.toLowerCase().includes("confirm"),
+    )?.count ?? 0;
+
+  const stats = [
+    {
+      label: "New Leads",
+      value: String(newLeadsCount),
+      today: "Active",
+      icon: Users,
+      iconClass: "bg-blue-100 text-blue-600",
+    },
+    {
+      label: "Follow-ups",
+      value: String(totalFollowUps),
+      today: "Today",
+      icon: Phone,
+      iconClass: "bg-emerald-100 text-emerald-600",
+    },
+    {
+      label: "Confirmed",
+      value: String(confirmedCount),
+      today: "Order",
+      icon: CheckCircle2,
+      iconClass: "bg-violet-100 text-violet-600",
+    },
+    {
+      label: "Total Leads",
+      value: String(totalLeads),
+      today: "Pipeline",
+      icon: Target,
+      iconClass: "bg-orange-100 text-orange-600",
+    },
+  ];
 
   return (
     <div className="mx-auto w-full max-w-[1600px] px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
@@ -142,7 +141,7 @@ export default function StaffHome({ user }: StaffHomeProps) {
 
               <div className="mt-1 flex items-end justify-between gap-2">
                 <p className="text-[25px] font-semibold leading-none text-[#173820]">
-                  {item.value}
+                  {isLeadsLoading ? "..." : item.value}
                 </p>
 
                 <span className="text-[9px] font-medium text-emerald-600 sm:text-[10px]">
@@ -161,7 +160,11 @@ export default function StaffHome({ user }: StaffHomeProps) {
 
         <QuickAction icon={Phone} title="Log Call" />
 
-        <QuickAction icon={CalendarDays} title="Follow-up" href="/leads/follow-ups" />
+        <QuickAction
+          icon={CalendarDays}
+          title="Follow-up"
+          href="/leads/follow-ups"
+        />
 
         <QuickAction icon={Users} title="View Leads" href="/leads" />
       </section>
@@ -241,18 +244,48 @@ export default function StaffHome({ user }: StaffHomeProps) {
               </p>
             </div>
 
-            <button
-              type="button"
-              className="text-[10px] font-medium text-[#237738]"
+            <Link
+              href="/leads"
+              className="text-[10px] font-medium text-[#237738] transition hover:underline"
             >
-              Details
-            </button>
+              View Leads
+            </Link>
           </div>
 
-          <div className="mt-6 space-y-5">
-            {leadStatus.map((item) => (
-              <LeadStatus key={item.label} {...item} />
-            ))}
+          <div className="mt-6 space-y-4">
+            {isLeadsLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="animate-pulse space-y-1.5">
+                    <div className="flex justify-between">
+                      <div className="h-3 w-20 rounded bg-slate-100" />
+                      <div className="h-3 w-8 rounded bg-slate-100" />
+                    </div>
+                    <div className="h-2 rounded-full bg-slate-100" />
+                  </div>
+                ))}
+              </div>
+            ) : statusCards.length === 0 ? (
+              <p className="py-4 text-center text-xs text-slate-400">
+                No status data available
+              </p>
+            ) : (
+              statusCards.map((card) => {
+                const percentage =
+                  totalLeads > 0
+                    ? Math.round((card.count / totalLeads) * 100)
+                    : 0;
+                return (
+                  <LeadStatus
+                    key={card.status_id}
+                    label={card.name}
+                    value={card.count}
+                    percentage={percentage}
+                    color={card.color}
+                  />
+                );
+              })
+            )}
           </div>
         </div>
       </section>
@@ -281,7 +314,8 @@ function QuickAction({
     </>
   );
 
-  const className = "flex min-h-[85px] flex-col items-center justify-center gap-2 rounded-[16px] border border-slate-200/80 bg-white px-1 transition hover:border-green-200 hover:bg-green-50/40 sm:min-h-[90px]";
+  const className =
+    "flex min-h-[85px] flex-col items-center justify-center gap-2 rounded-[16px] border border-slate-200/80 bg-white px-1 transition hover:border-green-200 hover:bg-green-50/40 sm:min-h-[90px]";
 
   if (href) {
     return (
@@ -372,10 +406,12 @@ function LeadStatus({
   label,
   value,
   percentage,
+  color,
 }: {
   label: string;
   value: number;
   percentage: number;
+  color?: string;
 }) {
   return (
     <div>
@@ -387,9 +423,10 @@ function LeadStatus({
 
       <div className="h-2 overflow-hidden rounded-full bg-slate-100">
         <div
-          className="h-full rounded-full bg-[#32924a]"
+          className="h-full rounded-full transition-all duration-300"
           style={{
             width: `${percentage}%`,
+            backgroundColor: color || "#32924a",
           }}
         />
       </div>
