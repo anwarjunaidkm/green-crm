@@ -87,7 +87,7 @@ const leadStatus = [
 export default function StaffHome({ user }: StaffHomeProps) {
   const currentDate = getCurrentDateString();
   const { data: followUpsData, isLoading: isFollowUpsLoading } = useLeadList({
-    date: currentDate,
+    follow_up_date: currentDate,
     per_page: 4,
   });
 

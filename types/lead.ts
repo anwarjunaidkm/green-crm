@@ -119,13 +119,12 @@ export interface LeadListParams {
   per_page?: number;
   search?: string;
   lead_status_id?: number | string;
+  status_id?: number | string;
   lead_channel_id?: number | string;
+  assigned_to?: number | string;
   product_id?: number | string;
-  follow_up_day?: number | string;
   is_starred?: number | boolean | string;
-  date?: string;
   follow_up_date?: string;
-  next_follow_up_date?: string;
 }
 
 // ============================================================

@@ -96,9 +96,9 @@ export default function FollowUpsContainer() {
     return () => clearTimeout(handler);
   }, [searchInput]);
 
-  // Fetch today's follow-up leads passing current date
+  // Fetch today's follow-up leads passing current date as follow_up_date
   const { data, isLoading, isFetching, isError, error, refetch } = useLeadList({
-    date: currentDate,
+    follow_up_date: currentDate,
     page,
     per_page: PER_PAGE,
     search: debouncedSearch,
