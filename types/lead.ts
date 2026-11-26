@@ -73,6 +73,7 @@ export interface LeadListItem {
   phone: string;
   status: string;
   status_color?: string;
+  status_slug?: string;
   source: string;
   product?: string | { id?: number; name?: string; item_code?: string; selling_price?: string | number } | null;
   follow_up_day?: number;
@@ -80,6 +81,7 @@ export interface LeadListItem {
   assigned_to?: string;
   remarks?: string;
   created_at?: string;
+  updated_at?: string;
   is_starred?: boolean | number;
 }
 
@@ -119,13 +121,12 @@ export interface LeadListParams {
   per_page?: number;
   search?: string;
   lead_status_id?: number | string;
+  status_id?: number | string;
   lead_channel_id?: number | string;
+  assigned_to?: number | string;
   product_id?: number | string;
-  follow_up_day?: number | string;
   is_starred?: number | boolean | string;
-  date?: string;
   follow_up_date?: string;
-  next_follow_up_date?: string;
 }
 
 // ============================================================

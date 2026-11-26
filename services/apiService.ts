@@ -63,7 +63,7 @@ export const getLeads = async () => {
 
 /**
  * Fetch lead list with pagination, search, status filter, and summary
- * GET /lead-list?search=&lead_status_id=&lead_channel_id=&product_id=&follow_up_day=&is_starred=&page=1&per_page=15
+ * GET /lead-list?search=&status_id=&lead_channel_id=&assigned_to=&follow_up_date=&page=1&per_page=10
  */
 export const getLeadList = async (
   params?: LeadListParams,
@@ -87,6 +87,20 @@ export const getLeadList = async (
     queryParams.set("lead_status_id", String(params.lead_status_id));
   }
   if (
+    params?.status_id !== undefined &&
+    params?.status_id !== null &&
+    params?.status_id !== ""
+  ) {
+    queryParams.set("status_id", String(params.status_id));
+  }
+  if (
+    params?.assigned_to !== undefined &&
+    params?.assigned_to !== null &&
+    params?.assigned_to !== ""
+  ) {
+    queryParams.set("assigned_to", String(params.assigned_to));
+  }
+  if (
     params?.lead_channel_id !== undefined &&
     params?.lead_channel_id !== null &&
     params?.lead_channel_id !== ""
@@ -101,27 +115,14 @@ export const getLeadList = async (
     queryParams.set("product_id", String(params.product_id));
   }
   if (
-    params?.follow_up_day !== undefined &&
-    params?.follow_up_day !== null &&
-    params?.follow_up_day !== ""
-  ) {
-    queryParams.set("follow_up_day", String(params.follow_up_day));
-  }
-  if (
     params?.is_starred !== undefined &&
     params?.is_starred !== null &&
     params?.is_starred !== ""
   ) {
     queryParams.set("is_starred", String(params.is_starred));
   }
-  if (params?.date) {
-    queryParams.set("date", params.date);
-  }
   if (params?.follow_up_date) {
     queryParams.set("follow_up_date", params.follow_up_date);
-  }
-  if (params?.next_follow_up_date) {
-    queryParams.set("next_follow_up_date", params.next_follow_up_date);
   }
 
   const qs = queryParams.toString();
